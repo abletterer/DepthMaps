@@ -1,0 +1,13 @@
+#version 410
+
+// Set the number of invocations in the work group.
+// In this case, we operate on the data with 16x16 pixel tiles.
+layout (local_size_x = 16) in;
+
+// Declare the input/output arrays
+layout(location = 0) in vec3 vert_in;
+layout(location = 1) out vec3 vert_out;
+
+void main() {
+	vert_out = vert_in + vec3(1., 1., 1.);
+}
