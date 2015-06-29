@@ -1,0 +1,79 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTryCompileExec3887999683/fast"
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3887999683.dir/build.make CMakeFiles/cmTryCompileExec3887999683.dir/build
+make[1] : on entre dans le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+/usr/bin/cmake -E cmake_progress_report /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3887999683.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec3887999683.dir/CheckSymbolExists.c.o   -c /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec3887999683
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3887999683.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3887999683.dir/CheckSymbolExists.c.o  -o cmTryCompileExec3887999683 -rdynamic 
+CMakeFiles/cmTryCompileExec3887999683.dir/CheckSymbolExists.c.o: dans la fonction « main »:
+CheckSymbolExists.c:(.text+0x16): référence indéfinie vers « pthread_create »
+collect2: erreur: ld a retourné 1 code d'état d'exécution
+CMakeFiles/cmTryCompileExec3887999683.dir/build.make:88 : la recette pour la cible « cmTryCompileExec3887999683 » a échouée
+make[1] : on quitte le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+make[1]: *** [cmTryCompileExec3887999683] Erreur 1
+Makefile:117 : la recette pour la cible « cmTryCompileExec3887999683/fast » a échouée
+make: *** [cmTryCompileExec3887999683/fast] Erreur 2
+
+File /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTryCompileExec3958124184/fast"
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3958124184.dir/build.make CMakeFiles/cmTryCompileExec3958124184.dir/build
+make[1] : on entre dans le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+/usr/bin/cmake -E cmake_progress_report /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3958124184.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec3958124184.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.2/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec3958124184
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3958124184.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec3958124184.dir/CheckFunctionExists.c.o  -o cmTryCompileExec3958124184 -rdynamic -lpthreads 
+/usr/bin/ld: ne peut trouver -lpthreads
+collect2: erreur: ld a retourné 1 code d'état d'exécution
+CMakeFiles/cmTryCompileExec3958124184.dir/build.make:88 : la recette pour la cible « cmTryCompileExec3958124184 » a échouée
+make[1] : on quitte le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+make[1]: *** [cmTryCompileExec3958124184] Erreur 1
+Makefile:117 : la recette pour la cible « cmTryCompileExec3958124184/fast » a échouée
+make: *** [cmTryCompileExec3958124184/fast] Erreur 2
+
+
+Determining if the function glXGetProcAddressEXT exists failed with the following output:
+Change Dir: /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTryCompileExec3297929606/fast"
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3297929606.dir/build.make CMakeFiles/cmTryCompileExec3297929606.dir/build
+make[1] : on entre dans le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+/usr/bin/cmake -E cmake_progress_report /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3297929606.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=glXGetProcAddressEXT   -o CMakeFiles/cmTryCompileExec3297929606.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.2/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec3297929606
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3297929606.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=glXGetProcAddressEXT    CMakeFiles/cmTryCompileExec3297929606.dir/CheckFunctionExists.c.o  -o cmTryCompileExec3297929606 -rdynamic -lGL 
+CMakeFiles/cmTryCompileExec3297929606.dir/CheckFunctionExists.c.o: dans la fonction « main »:
+CheckFunctionExists.c:(.text+0x15): référence indéfinie vers « glXGetProcAddressEXT »
+collect2: erreur: ld a retourné 1 code d'état d'exécution
+CMakeFiles/cmTryCompileExec3297929606.dir/build.make:89 : la recette pour la cible « cmTryCompileExec3297929606 » a échouée
+make[1] : on quitte le répertoire « /home/blettere/Projets/DepthMaps/build/CMakeFiles/CMakeTmp »
+make[1]: *** [cmTryCompileExec3297929606] Erreur 1
+Makefile:117 : la recette pour la cible « cmTryCompileExec3297929606/fast » a échouée
+make: *** [cmTryCompileExec3297929606/fast] Erreur 2
+
+
