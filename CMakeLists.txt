@@ -61,8 +61,8 @@ file(
 	SRC_FILES
 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/*.vert"
-	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/*.frag"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
 )
 
 add_executable(DepthMapToPointCloud
