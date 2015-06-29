@@ -9,7 +9,7 @@ find_package(OpenCL REQUIRED)
 find_package(GLM REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
-	message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
+	message( FATAL_ERROR "Please select another Build Directory !" )
 endif()
 if( CMAKE_SOURCE_DIR MATCHES " " )
 	message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
@@ -56,21 +56,18 @@ add_definitions(
 )
 
 # DepthMapToPointCloud
+file(
+	GLOB
+	SRC_FILES
+	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/*.vert"
+	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/*.frag"
+)
+
 add_executable(DepthMapToPointCloud
 	DepthMapToPointCloud/DepthMapToPointCloud.cpp
-
-	common/shader.cpp
-	common/shader.hpp
-	common/controls.cpp
-	common/controls.hpp
-	common/texture.cpp
-	common/texture.hpp
-	common/objloader.cpp
-	common/objloader.hpp
-
-	DepthMapToPointCloud/StandardShading.vert
-	DepthMapToPointCloud/StandardShading.frag
-	DepthMapToPointCloud/ComputeShading.comp
+	${SRC_FILES}
 )
 target_link_libraries(DepthMapToPointCloud
 	${ALL_LIBS}
