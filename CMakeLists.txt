@@ -56,18 +56,19 @@ add_definitions(
 )
 
 # DepthMapToPointCloud
-file(
-	GLOB
-	SRC_FILES
-	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
-	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
-)
+# file(
+# 	GLOB
+# 	SRC_FILES
+# 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
+# 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
+# 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
+# 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
+# )
 
 add_executable(DepthMapToPointCloud
-	DepthMapToPointCloud/DepthMapToPointCloud.cpp
-	${SRC_FILES}
+	# DepthMapToPointCloud/DepthMapToPointCloud.cpp
+	common/hello.c
+	# ${SRC_FILES}
 )
 target_link_libraries(DepthMapToPointCloud
 	${ALL_LIBS}

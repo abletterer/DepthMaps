@@ -47,7 +47,7 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Tutorial 08 - Basic Shading", NULL, NULL);
+	window = glfwCreateWindow( 1024, 768, "Depth Map to Point Cloud", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. "
 						 "If you have an Intel GPU, they are not 3.3 compatible. "
@@ -85,8 +85,8 @@ int main( void )
 
 	// Create and compile our GLSL program from the shaders
 	ShaderProgram shader_program;
-	shader_program.loadShader(GL_VERTEX_SHADER, "shaders/StandardShading.vert");
-	shader_program.loadShader(GL_FRAGMENT_SHADER, "shaders/StandardShading.frag");
+	shader_program.loadShader(GL_VERTEX_SHADER, "../shaders/StandardShading.vert");
+	shader_program.loadShader(GL_FRAGMENT_SHADER, "../shaders/StandardShading.frag");
 
 	GLuint programID = shader_program.getProgramId();
 
@@ -94,7 +94,7 @@ int main( void )
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
 	// Load the texture
-	GLuint Texture = loadDDS("uvmap.DDS");
+	GLuint Texture = loadDDS("../DepthMapToPointCloud/uvmap.DDS");
 
 	// Get a handle for our "myTextureSampler" uniform
 	GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
@@ -103,7 +103,7 @@ int main( void )
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
-	loadOBJ("suzanne.obj", vertices, uvs, normals);
+	loadOBJ("../DepthMapToPointCloud/suzanne.obj", vertices, uvs, normals);
 
 
 	std::vector<glm::vec3> vertices_out(vertices);
