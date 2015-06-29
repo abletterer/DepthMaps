@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(OpenGL REQUIRED)
 find_package(OpenCL REQUIRED)
-
+find_package(GLM REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
@@ -34,8 +34,8 @@ endif(INCLUDE_DISTRIB)
 
 include_directories(
 	${OPENCL_INCLUDE_DIRS}
+	${GLM_INCLUDE_DIRS}
 	external/glfw-3.0.3/include/GLFW/
-	external/glm-0.9.4.0/
 	external/glew-1.9.0/include/
 	.
 )
@@ -67,7 +67,6 @@ add_executable(DepthMapToPointCloud
 	common/texture.hpp
 	common/objloader.cpp
 	common/objloader.hpp
-	common/mykernel.cl
 
 	DepthMapToPointCloud/StandardShading.vert
 	DepthMapToPointCloud/StandardShading.frag
