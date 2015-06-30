@@ -9,12 +9,12 @@
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
 #else
-#include <CL/cl.h>
+#include <CL/cl.hpp>
 #endif
 
 #include "kernel/kernel_utils.hpp"
 
-#define MEM_SIZE (32)
+#define MEM_SIZE (13)
 #define MAX_SOURCE_SIZE (0x100000)
 
 class ProgramHandler
