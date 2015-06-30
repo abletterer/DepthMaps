@@ -55,20 +55,25 @@ add_definitions(
 	-D_CRT_SECURE_NO_WARNINGS
 )
 
-# DepthMapToPointCloud
-# file(
-# 	GLOB
-# 	SRC_FILES
-# 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
-# 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
-# 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
-# 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
-# )
+#DepthMapToPointCloud
+file(
+	GLOB
+	SRC_FILES
+#	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
+#	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
+#	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
+#	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
+#	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel_utils.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/ProgramHandler.cpp"
+)
 
 add_executable(DepthMapToPointCloud
-	# DepthMapToPointCloud/DepthMapToPointCloud.cpp
-	common/hello.c
-	# ${SRC_FILES}
+#	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/DepthMapToPointCloud.cpp"
+	${SRC_FILES}
+)
+target_compile_features(DepthMapToPointCloud
+	PRIVATE
+	cxx_range_for
 )
 target_link_libraries(DepthMapToPointCloud
 	${ALL_LIBS}
@@ -85,8 +90,9 @@ SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
 if (NOT ${CMAKE_GENERATOR} MATCHES "Xcode" )
 add_custom_command(
-   TARGET DepthMapToPointCloud POST_BUILD
-   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/DepthMapToPointCloud${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/"
+	TARGET DepthMapToPointCloud POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy
+	"${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/DepthMapToPointCloud${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/"
 )
 
 elseif (${CMAKE_GENERATOR} MATCHES "Xcode" )
