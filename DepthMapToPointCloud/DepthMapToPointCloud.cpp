@@ -141,14 +141,23 @@ int main( void )
 //				 &depth_map[0]);
 
 	// Load it into a VBO
+
+	int tab[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9,
+					10, 11, 12, 13, 14, 15, 16};
+
+	for(int i = 0; i < 16; ++i)
+	{
+		std::cout << tab[i] << std::endl;
+	}
+
+	std::cout << "------" << std::endl;
+
+	glUseProgram(compute_programID);
+
 	GLuint vertex_buffer;
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points * sizeof(vec4), NULL, GL_STATIC_DRAW);
-
-
-	//	std::vector<glm::vec4> vertices(nb_points);
-	GLuint counter = 0;
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 16 * sizeof(int), &tab, GL_STATIC_DRAW);
 
 //	GLuint ac_buffer = 0;
 //	glGenBuffers(1, &ac_buffer);
@@ -156,27 +165,23 @@ int main( void )
 //	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 //	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-	counter = 1;	//Just another value
 
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
-	glUseProgram(compute_programID);
+	glDispatchCompute(16, 1, 1);
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
-	glDispatchCompute(1, 1, 1);
-//	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-//	glm::vec4* ptr = (glm::vec4*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-//	std::vector<glm::vec4> vertices(ptr, ptr+nb_points);
-//	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	int* ptr = (int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
-//	for(std::vector<glm::vec4>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
-//	{
-//		glm::vec4 vec = *it;
-//		std::cout << vec.x << " | " << vec.y << " | " << vec.z << " | " << vec.w << std::endl;
-//	}
+	for(int i = 0; i < 16; ++i)
+	{
+		std::cout << ptr[i] << std::endl;
+	}
 
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 //	do{
 //		// Clear the screen
 //		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -222,7 +227,7 @@ int main( void )
 //		   glfwWindowShouldClose(window) == 0 );
 
 	// Cleanup VBO and shader
-//	glDeleteBuffers(1, &vertexbuffer);
+	glDeleteBuffers(1, &vertex_buffer);
 //	glDeleteProgram(shader_programID);
 	glDeleteProgram(compute_programID);
 //	glDeleteTextures(1, &textureID);
