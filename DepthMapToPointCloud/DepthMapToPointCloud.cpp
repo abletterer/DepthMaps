@@ -142,46 +142,47 @@ int main( void )
 
 	// Load it into a VBO
 
-	int tab[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9,
-					10, 11, 12, 13, 14, 15, 16};
-
-	for(int i = 0; i < 16; ++i)
-	{
-		std::cout << tab[i] << std::endl;
-	}
-
-	std::cout << "------" << std::endl;
+//	int tab[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9,
+//					10, 11, 12, 13, 14, 15, 16};
 
 	glUseProgram(compute_programID);
 
 	GLuint vertex_buffer;
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 16 * sizeof(int), &tab, GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points * sizeof(vec4), new vec4[nb_points], GL_STATIC_DRAW);
 
-//	GLuint ac_buffer = 0;
-//	glGenBuffers(1, &ac_buffer);
-//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
-//	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
-//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	int counter = 0;
+
+	GLuint ac_buffer = 0;
+	glGenBuffers(1, &ac_buffer);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
+	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
 
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
-	glDispatchCompute(16, 1, 1);
+	glDispatchCompute(nb_points/16+1, 1, 1);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
 
-	int* ptr = (int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	GLuint* ptr = (GLuint*)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_ONLY);
 
-	for(int i = 0; i < 16; ++i)
-	{
-		std::cout << ptr[i] << std::endl;
-	}
+	std::cout << ptr[0] << std::endl;
 
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+//	for(int i = 0; i < nb_points; ++i)
+//	{
+//		std::cout << ptr[i].x << " | " << ptr[i].y << " | " << ptr[i].z << " | " << ptr[i].w << std::endl;
+//	}
+
+//	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 //	do{
 //		// Clear the screen
 //		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
