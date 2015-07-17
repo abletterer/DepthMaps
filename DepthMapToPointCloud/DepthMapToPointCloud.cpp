@@ -108,49 +108,48 @@ int main( void )
 	std::vector<GLfloat> depth_map;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/bunny/DepthMaps/256x256/bunny-DepthCamera-0-originalDepthMap.dat";
+	str += "/Projets/Results/bunny/DepthMaps/32x32/bunny-DepthCamera-0-originalDepthMap.dat";
 
 	// Load the texture
 
 	int width, height;
 	loadDepthMap(str, depth_map, width, height);
 
+	//Count the number of non-black points (points not belonging to the background)
 	int nb_points = 0;
 	for(std::vector<GLfloat>::const_iterator it = depth_map.begin(); it != depth_map.end(); ++it)
 	{
-		if(fabs(1.f-*it) > FLT_EPSILON)
+		GLfloat value = *it;
+		if(fabs(1.f-value) > FLT_EPSILON)
 		{
 			++nb_points;
 		}
 	}
 
-//	GLuint textureID;
-
-//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-//	glGenTextures(1, &textureID);
-//	glBindTexture(GL_TEXTURE_2D, textureID);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-//					GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-//					GL_NEAREST);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width,
-//				 height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-//				 &depth_map[0]);
-
-	// Load it into a VBO
-
-//	int tab[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9,
-//					10, 11, 12, 13, 14, 15, 16};
-
 	glUseProgram(compute_programID);
 
-	GLuint vertex_buffer;
+    glUniform1i(glGetUniformLocation(compute_programID, "width"), width);
+    glUniform1i(glGetUniformLocation(compute_programID, "height"), height);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	GLuint textureID = 0;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+					GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+					GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width,
+				 height, 0, GL_RED, GL_FLOAT,
+				 &depth_map[0]);
+
+	GLuint vertex_buffer = 0;
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points * sizeof(vec4), new vec4[nb_points], GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points * sizeof(vec4), NULL, GL_STATIC_DRAW);
 
 	int counter = 0;
 
@@ -160,29 +159,27 @@ int main( void )
 	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
-	glDispatchCompute(nb_points/16+1, 1, 1);
+	glDispatchCompute(width/16, height/16, 1);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
 
-	GLuint* ptr = (GLuint*)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_ONLY);
+	vec4* vec = (vec4*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
-	std::cout << ptr[0] << std::endl;
-
-//	for(int i = 0; i < nb_points; ++i)
-//	{
-//		std::cout << ptr[i].x << " | " << ptr[i].y << " | " << ptr[i].z << " | " << ptr[i].w << std::endl;
-//	}
+	for(int i = 0; i < nb_points; ++i)
+	{
+		std::cout << vec[i].x << " | " << vec[i].y << " | " << vec[i].z << " | " << vec[i].w << std::endl;
+	}
 
 //	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 //	do{
 //		// Clear the screen
 //		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -229,9 +226,10 @@ int main( void )
 
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertex_buffer);
+	glDeleteBuffers(1, &ac_buffer);
 //	glDeleteProgram(shader_programID);
 	glDeleteProgram(compute_programID);
-//	glDeleteTextures(1, &textureID);
+	glDeleteTextures(1, &textureID);
 	glDeleteVertexArrays(1, &VertexArrayID);
 
 	// Close OpenGL window and terminate GLFW

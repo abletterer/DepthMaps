@@ -3,18 +3,23 @@
 layout (std430, binding=0)
 buffer vertex_buffer { vec4 vertex[]; };
 
-layout(binding=0)
+layout (binding=0)
 uniform atomic_uint cur_index;
 
-//layout (binding=0, rgba32f)
-//uniform sampler2D inTex;
+layout (binding=0)
+uniform sampler2D in_tex;
 
-layout (local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+uniform int width;
+uniform int height;
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 void main() {
-	if(gl_GlobalInvocationID.x < vertex.length())
-	{
-		atomicCounterIncrement(cur_index);
-	}
-//	vertex[gl_GlobalInvocationID.x] = vec4(gl_GlobalInvocationID.x, 1, 1, 1.);
+	vec2 tex_coords = vec2(float(gl_GlobalInvocationID.x)/float(width), float(gl_GlobalInvocationID.y)/float(height));
+	float depth = texture(in_tex, tex_coords).r;
 
+	if(depth < 1)
+	{
+		uint index = atomicCounterIncrement(cur_index);
+		vertex[index] = vec4(tex_coords.x*2-1, tex_coords.y*2-1, depth, 1.);
+	}
 }
