@@ -7,12 +7,12 @@
 // Include GLEW
 #include <GL/glew.h>
 
-// Include OpenCL
-#if defined(__APPLE__) || defined(__MACOSX)
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.hpp>
-#endif
+//// Include OpenCL
+//#if defined(__APPLE__) || defined(__MACOSX)
+//#include <OpenCL/cl.h>
+//#else
+//#include <CL/cl.hpp>
+//#endif
 
 // Include GLFW
 #include <glfw3.h>
@@ -30,6 +30,7 @@ using namespace glm;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 #include <common/matrix.hpp>
+#include <common/utils.hpp>
 
 int main( void )
 {
@@ -88,118 +89,143 @@ int main( void )
 	shader_program.loadShader(GL_VERTEX_SHADER, "../shaders/StandardShading.vert");
 	shader_program.loadShader(GL_FRAGMENT_SHADER, "../shaders/StandardShading.frag");
 
-	GLuint programID = shader_program.getProgramId();
+	ShaderProgram compute_program;
+	compute_program.loadShader(GL_COMPUTE_SHADER, "../shaders/ComputeShading.cs");
 
-	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+//	GLuint shader_programID = shader_program.getProgramId();
+	GLuint compute_programID = compute_program.getProgramId();
 
-	// Load the texture
-	GLuint Texture = loadDDS("../DepthMapToPointCloud/uvmap.DDS");
+//	glUseProgram(compute_programID);
 
-	// Get a handle for our "myTextureSampler" uniform
-	GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+//	glUniform1i(glGetUniformLocation(compute_programID, "inTex"), 0);
+
+//	glUseProgram(shader_programID);
+
+//	// Get a handle for our "MVP" uniform
+//	GLuint mvpID = glGetUniformLocation(shader_programID, "MVP");
 
 	// Read our .obj file
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec2> uvs;
-	std::vector<glm::vec3> normals;
-	loadOBJ("../DepthMapToPointCloud/suzanne.obj", vertices, uvs, normals);
+	std::vector<GLfloat> depth_map;
 
+	std::string str = getenv("HOME");
+	str += "/Projets/Results/bunny/DepthMaps/256x256/bunny-DepthCamera-0-originalDepthMap.dat";
 
-	std::vector<glm::vec3> vertices_out(vertices);
+	// Load the texture
+
+	int width, height;
+	loadDepthMap(str, depth_map, width, height);
+
+	int nb_points = 0;
+	for(std::vector<GLfloat>::const_iterator it = depth_map.begin(); it != depth_map.end(); ++it)
+	{
+		if(fabs(1.f-*it) > FLT_EPSILON)
+		{
+			++nb_points;
+		}
+	}
+
+//	GLuint textureID;
+
+//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+//	glGenTextures(1, &textureID);
+//	glBindTexture(GL_TEXTURE_2D, textureID);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+//					GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+//					GL_NEAREST);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width,
+//				 height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+//				 &depth_map[0]);
 
 	// Load it into a VBO
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+	GLuint vertex_buffer;
+	glGenBuffers(1, &vertex_buffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points * sizeof(vec4), NULL, GL_STATIC_DRAW);
 
-	GLuint vertexbuffer_out;
-	glGenBuffers(1, &vertexbuffer_out);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_out);
-	glBufferData(GL_ARRAY_BUFFER, vertices_out.size() * sizeof(glm::vec3), &vertices_out[0], GL_STATIC_DRAW);
 
-	GLuint uvbuffer;
-	glGenBuffers(1, &uvbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+	//	std::vector<glm::vec4> vertices(nb_points);
+	GLuint counter = 0;
 
-	GLuint normalbuffer;
-	glGenBuffers(1, &normalbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+//	GLuint ac_buffer = 0;
+//	glGenBuffers(1, &ac_buffer);
+//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
+//	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
+//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-	// Get a handle for our "LightPosition" uniform
-	glUseProgram(programID);
+	counter = 1;	//Just another value
 
-	do{
 
-		// Clear the screen
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(compute_programID);
 
-		// Use our shader
-		glUseProgram(programID);
+//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+	glDispatchCompute(1, 1, 1);
+//	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		// Compute the MVP matrix from keyboard and mouse input
-		computeMatricesFromInputs();
-		glm::mat4 ProjectionMatrix = getProjectionMatrix();
-		glm::mat4 ViewMatrix = getViewMatrix();
-		glm::mat4 ModelMatrix = glm::mat4(1.0);
-		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+//	glm::vec4* ptr = (glm::vec4*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+//	std::vector<glm::vec4> vertices(ptr, ptr+nb_points);
+//	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-		// Send our transformation to the currently bound shader,
-		// in the "MVP" uniform
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+//	for(std::vector<glm::vec4>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
+//	{
+//		glm::vec4 vec = *it;
+//		std::cout << vec.x << " | " << vec.y << " | " << vec.z << " | " << vec.w << std::endl;
+//	}
 
-		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		// Set our "myTextureSampler" sampler to user Texture Unit 0
-		glUniform1i(TextureID, 0);
+//	do{
+//		// Clear the screen
+//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-		glVertexAttribPointer(
-			0,                  // attribute
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
+//		// 1rst attribute buffer : vertices
+//		glEnableVertexAttribArray(0);
+//		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+//		glVertexAttribPointer(
+//			0,                  // attribute
+//			4,                  // size
+//			GL_FLOAT,           // type
+//			GL_FALSE,           // normalized?
+//			0,                  // stride
+//			(void*)0            // array buffer offset
+//		);
 
-		// 2nd attribute buffer : UVs
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-		glVertexAttribPointer(
-			1,                                // attribute
-			2,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+//		// Draw the triangles !
+//		glDrawArrays(GL_LINES, 0, vertices.size());
 
-		// Draw the triangles !
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+//		// Use our shader
+//		glUseProgram(shader_programID);
 
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
+//		// Compute the MVP matrix from keyboard and mouse input
+//		computeMatricesFromInputs();
+//		glm::mat4 ProjectionMatrix = getProjectionMatrix();
+//		glm::mat4 ViewMatrix = getViewMatrix();
+//		glm::mat4 ModelMatrix = glm::mat4(1.0);
+//		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-		// Swap buffers
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+//		// Send our transformation to the currently bound shader,
+//		// in the "MVP" uniform
+//		glUniformMatrix4fv(mvpID, 1, GL_FALSE, &MVP[0][0]);
 
-	} // Check if the ESC key was pressed or the window was closed
-	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-		   glfwWindowShouldClose(window) == 0 );
+//		glBindBuffer(GL_ARRAY_BUFFER, 0);
+//		glDisableVertexAttribArray(0);
+
+//		// Swap buffers
+//		glfwSwapBuffers(window);
+//		glfwPollEvents();
+
+//	} // Check if the ESC key was pressed or the window was closed
+//	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+//		   glfwWindowShouldClose(window) == 0 );
 
 	// Cleanup VBO and shader
-	glDeleteBuffers(1, &vertexbuffer);
-	glDeleteBuffers(1, &uvbuffer);
-	glDeleteProgram(programID);
-	glDeleteTextures(1, &Texture);
+//	glDeleteBuffers(1, &vertexbuffer);
+//	glDeleteProgram(shader_programID);
+	glDeleteProgram(compute_programID);
+//	glDeleteTextures(1, &textureID);
 	glDeleteVertexArrays(1, &VertexArrayID);
 
 	// Close OpenGL window and terminate GLFW

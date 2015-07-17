@@ -36,7 +36,7 @@ void ShaderProgram::loadShader(GLenum shaderType, const char* shader_file_path)
 	}
 	else
 	{
-		printf("Impossible to open %s. Are you in the right directory ?\n", shader_file_path);
+		fprintf(stderr, "Impossible to open %s. Are you in the right directory ?\n", shader_file_path);
 		getchar();
 		return;
 	}

@@ -5,7 +5,7 @@ project (DepthMaps)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(OpenGL REQUIRED)
-find_package(OpenCL REQUIRED)
+#find_package(OpenCL REQUIRED)
 find_package(GLM REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
@@ -33,7 +33,7 @@ if(INCLUDE_DISTRIB)
 endif(INCLUDE_DISTRIB)
 
 include_directories(
-	${OPENCL_INCLUDE_DIRS}
+#	${OPENCL_INCLUDE_DIRS}
 	${GLM_INCLUDE_DIRS}
 	external/glfw-3.0.3/include/GLFW/
 	external/glew-1.9.0/include/
@@ -42,7 +42,7 @@ include_directories(
 
 set(ALL_LIBS
 	${OPENGL_LIBRARY}
-	${OPENCL_LIBRARIES}
+#	${OPENCL_LIBRARIES}
 	GLFW_303
 	GLEW_190
 )
@@ -59,16 +59,17 @@ add_definitions(
 file(
 	GLOB
 	SRC_FILES
-#	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
-#	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
-#	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
-#	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
+	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.cs"
 #	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel_utils.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/ProgramHandler.cpp"
+#	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/ProgramHandler.cpp"
 )
 
 add_executable(DepthMapToPointCloud
-#	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/DepthMapToPointCloud.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/DepthMapToPointCloud.cpp"
 	${SRC_FILES}
 )
 target_compile_features(DepthMapToPointCloud
