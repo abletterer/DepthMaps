@@ -5,8 +5,10 @@ project (DepthMaps)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(OpenGL REQUIRED)
-#find_package(OpenCL REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(GLM REQUIRED)
+find_package(Qt4 REQUIRED)
+find_package(QGLViewer REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory !" )
@@ -18,33 +20,21 @@ if( CMAKE_BINARY_DIR MATCHES " " )
 	message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
 endif()
 
-
-
-# Compile external dependencies
-add_subdirectory (external)
-
-# On Visual 2005 and above, this module can set the debug working directory
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-1c73e35")
-include(CreateLaunchers)
-include(MSVCMultipleProcessCompile) # /MP
-
-if(INCLUDE_DISTRIB)
-	add_subdirectory(distrib)
-endif(INCLUDE_DISTRIB)
-
 include_directories(
-#	${OPENCL_INCLUDE_DIRS}
+	${OPENGL_INCLUDE_DIR}
 	${GLM_INCLUDE_DIRS}
-	external/glfw-3.0.3/include/GLFW/
-	external/glew-1.9.0/include/
+	${QT_INCLUDE_DIR}
+	${QGLVIEWER_INCLUDE_DIR}
 	.
 )
 
+INCLUDE(${QT_USE_FILE})
+
 set(ALL_LIBS
 	${OPENGL_LIBRARY}
-#	${OPENCL_LIBRARIES}
-	GLFW_303
-	GLEW_190
+	${QT_LIBRARIES}
+	${QGLVIEWER_LIBRARY}
+	${GLEW_LIBRARIES}
 )
 
 add_definitions(
@@ -53,6 +43,7 @@ add_definitions(
 	-DTW_NO_DIRECT3D
 	-DGLEW_STATIC
 	-D_CRT_SECURE_NO_WARNINGS
+    ${QT_DEFINITIONS}
 )
 
 #DepthMapToPointCloud
@@ -60,17 +51,29 @@ file(
 	GLOB
 	SRC_FILES
 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp"
+)
+
+file(
+	GLOB
+	INCLUDE_FILES
 	"${CMAKE_CURRENT_SOURCE_DIR}/common/*.hpp"
+)
+QT4_WRAP_CPP(INCLUDE_FILES_MOC ${INCLUDE_FILES})
+
+file(
+	GLOB
+	SHADER_FILES
 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
 	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.cs"
-#	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel_utils.hpp"
-#	"${CMAKE_CURRENT_SOURCE_DIR}/kernel/ProgramHandler.cpp"
 )
+
 
 add_executable(DepthMapToPointCloud
 	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/DepthMapToPointCloud.cpp"
 	${SRC_FILES}
+	${INCLUDE_FILES_MOC}
+	${SHADER_FILES}
 )
 target_compile_features(DepthMapToPointCloud
 	PRIVATE
@@ -82,8 +85,6 @@ target_link_libraries(DepthMapToPointCloud
 
 # Xcode and Visual working directories
 set_target_properties(DepthMapToPointCloud PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/")
-create_target_launcher(DepthMapToPointCloud WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/")
-
 
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
