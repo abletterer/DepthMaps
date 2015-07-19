@@ -12,5 +12,6 @@ class Viewer : public QGLViewer
 	GLuint compute_programID;
 	GLuint vertex_buffer;
 	int nb_points;
+	GLfloat mvp_matrix_f[16];
 
 };
