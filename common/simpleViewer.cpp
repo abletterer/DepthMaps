@@ -40,53 +40,56 @@ void Viewer::draw()
    // Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for(std::vector<GLuint>::const_iterator it = vertex_buffers.begin(); it != vertex_buffers.end(); ++it)
+	for(int i = 0; i < vertex_buffers.size(); ++i)
 	{
-		GLuint vertex_buffer = *it;
-		glm::dmat4 mvp_matrix_o(2.37193, 0, 0, 0,
-			0, 2.15934, -0.674706, -0.447214,
-			0, -1.07967, -1.34941, -0.894427,
-			0.0399307, -0.239169, 0.288652, 0.374409
-			);
-
-		mvp_matrix_o = glm::inverse(mvp_matrix_o);
-
-		glm::dmat4 mvp_matrix_d;
-		this->camera()->getModelViewProjectionMatrix(glm::value_ptr(mvp_matrix_d));
-
-		mvp_matrix_o = mvp_matrix_d*mvp_matrix_o;
-
-		for(int i = 0; i < 4; ++i)
+		if(i<2)
 		{
-			for(int j = 0; j < 4; ++j)
+			GLuint& vertex_buffer = vertex_buffers[i];
+			glm::dmat4 mvp_matrix_o(2.37193, 0, 0, 0,
+				0, 2.15934, -0.674706, -0.447214,
+				0, -1.07967, -1.34941, -0.894427,
+				0.0399307, -0.239169, 0.288652, 0.374409
+				);
+
+			mvp_matrix_o = glm::inverse(mvp_matrix_o);
+
+			glm::dmat4 mvp_matrix_d;
+			this->camera()->getModelViewProjectionMatrix(glm::value_ptr(mvp_matrix_d));
+
+			mvp_matrix_o = mvp_matrix_d*mvp_matrix_o;
+
+			for(int i = 0; i < 4; ++i)
 			{
-				mvp_matrix_f[i*4+j] = (GLfloat)mvp_matrix_o[i][j];
+				for(int j = 0; j < 4; ++j)
+				{
+					mvp_matrix_f[i*4+j] = (GLfloat)mvp_matrix_o[i][j];
+				}
 			}
+
+			// Send our transformation to the currently bound shader,
+			// in the "MVP" uniform
+			glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, &mvp_matrix_f[0]);  //&MVP[0][0]
+
+			// Use our shader
+			glUseProgram(render_programID);
+
+			glBindVertexArray(vertex_arrays[i]);
+			glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(
+			   0,                  // Must match the layout location in the shader.
+			   4,                  // size
+			   GL_FLOAT,           // type
+			   GL_FALSE,           // normalized?
+			   0,                  // stride
+			   (void*)0            // array buffer offset
+			   );
+
+			glDrawArrays(GL_POINTS, 0, nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
+			glDisableVertexAttribArray(0);
+			glBindVertexArray(0);
 		}
-
-		// Send our transformation to the currently bound shader,
-		// in the "MVP" uniform
-		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, &mvp_matrix_f[0]);  //&MVP[0][0]
-
-		// Use our shader
-		glUseProgram(render_programID);
-
-		glBindVertexArray(vertex_arrays[it-vertex_buffers.begin()]);
-		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(
-		   0,                  // Must match the layout location in the shader.
-		   4,                  // size
-		   GL_FLOAT,           // type
-		   GL_FALSE,           // normalized?
-		   0,                  // stride
-		   (void*)0            // array buffer offset
-		   );
-
-		glDrawArrays(GL_POINTS, 0, nb_points_buffers[it-vertex_buffers.begin()]);	//Launch OpenGL pipeline on those primitives
-		glDisableVertexAttribArray(0);
-		glBindVertexArray(0);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -180,39 +183,42 @@ void Viewer::init()
 
 	for(int i = 0; i < depth_maps.size(); ++i)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width,
-			height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-			&depth_maps[i][0]);
-
-		GLuint& vertex_array = vertex_arrays[i];
-		GLuint& vertex_buffer = vertex_buffers[i];
-
-		glGenVertexArrays(1, &vertex_array);
-		glBindVertexArray(vertex_array);
-
-		glGenBuffers(1, &vertex_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-
-		glBufferData(GL_ARRAY_BUFFER, nb_points_buffers[i] * sizeof(glm::vec4), NULL, GL_STATIC_DRAW);
-
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
-		glDispatchCompute(width/16, height/16, 1);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-		glm::vec4* ptr = (glm::vec4*) glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
-
-		for(int j = 0; j < nb_points_buffers[i]; ++j)
+		if(i<2)
 		{
-			std::cout << ptr[j].x << " " << ptr[j].y << " " << ptr[j].z << " " << ptr[j].w << std::endl;
-		}
-		std::cout << "-----------" << std::endl;
-		std::cout << "-----------" << std::endl;
-		std::cout << "-----------" << std::endl;
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width,
+				height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+				&depth_maps[i][0]);
 
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-//		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+			GLuint& vertex_array = vertex_arrays[i];
+			GLuint& vertex_buffer = vertex_buffers[i];
+
+			glGenVertexArrays(1, &vertex_array);
+			glBindVertexArray(vertex_array);
+
+			glGenBuffers(1, &vertex_buffer);
+			glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+
+			glBufferData(GL_ARRAY_BUFFER, nb_points_buffers[i] * sizeof(glm::vec4), NULL, GL_STATIC_DRAW);
+
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
+			glDispatchCompute(width/16, height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			glm::vec4* ptr = (glm::vec4*) glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+
+			for(int j = 0; j < nb_points_buffers[i]; ++j)
+			{
+				std::cout << ptr[j].x << " " << ptr[j].y << " " << ptr[j].z << " " << ptr[j].w << std::endl;
+			}
+			std::cout << "-----------" << std::endl;
+			std::cout << "-----------" << std::endl;
+			std::cout << "-----------" << std::endl;
+
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+//			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		}
 	}
 
 	glBindVertexArray(0);

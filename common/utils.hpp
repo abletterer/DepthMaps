@@ -36,20 +36,20 @@ void loadDepthMaps(const std::string& directory_name, std::vector<std::vector<GL
 		switch(type)
 		{
 			case ORIGINAL:
-				filter.set_expression(".*originalDepthMap.dat");
-				break;
+			filter.set_expression(".*originalDepthMap.dat");
+			break;
 			case VISIBILITY:
-				filter.set_expression(".*modifiedDepthMap-Visibility.dat");
-				break;
+			filter.set_expression(".*modifiedDepthMap-Visibility.dat");
+			break;
 			case DENSITY:
-				filter.set_expression(".*modifiedDepthMap-Density.dat");
-				break;
+			filter.set_expression(".*modifiedDepthMap-Density.dat");
+			break;
 			default:
-				filter.set_expression("-");
-				break;
+			filter.set_expression("-");
+			break;
 		}
 		boost::smatch what;
-		int count = 0;
+		int count;
 		for(fs::directory_iterator dir_iter(directory) ; dir_iter != end_iter && count < 2; ++dir_iter)
 		{
 			if (fs::is_regular_file(dir_iter->status()))
@@ -65,14 +65,14 @@ void loadDepthMaps(const std::string& directory_name, std::vector<std::vector<GL
 						getline(file, line);
 						std::istringstream is_before( line );
 						std::vector<GLfloat> tmp_vec((std::istream_iterator<GLfloat>(is_before)),
-											  std::istream_iterator<GLfloat>());
+							std::istream_iterator<GLfloat>());
 						depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
 						width = depth_map.size();
 
-						while (getline( file, line )) {
+						while (getline( file, line )) 
+						{
 							std::istringstream is( line );
-							std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is),
-												  std::istream_iterator<GLfloat>()};
+							std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
 							depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
 						}
 
