@@ -10,8 +10,9 @@ class Viewer : public QGLViewer
 	private :
 	GLuint render_programID;
 	GLuint compute_programID;
-	GLuint vertex_buffer;
-	int nb_points;
+	std::vector<GLuint> vertex_arrays;
+	std::vector<GLuint> vertex_buffers;
+	std::vector<int> nb_points_buffers;
 	GLfloat mvp_matrix_f[16];
 
 };

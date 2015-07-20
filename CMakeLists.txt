@@ -9,6 +9,7 @@ find_package(GLEW REQUIRED)
 find_package(GLM REQUIRED)
 find_package(Qt4 REQUIRED)
 find_package(QGLViewer REQUIRED)
+find_package(Boost COMPONENTS filesystem regex system REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory !" )
@@ -22,9 +23,11 @@ endif()
 
 include_directories(
 	${OPENGL_INCLUDE_DIR}
+	${GLEW_INCLUDE_DIRS}
 	${GLM_INCLUDE_DIRS}
 	${QT_INCLUDE_DIR}
 	${QGLVIEWER_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 	.
 )
 
@@ -32,9 +35,10 @@ INCLUDE(${QT_USE_FILE})
 
 set(ALL_LIBS
 	${OPENGL_LIBRARY}
+	${GLEW_LIBRARIES}
 	${QT_LIBRARIES}
 	${QGLVIEWER_LIBRARY}
-	${GLEW_LIBRARIES}
+	${Boost_LIBRARIES}
 )
 
 add_definitions(
@@ -43,7 +47,7 @@ add_definitions(
 	-DTW_NO_DIRECT3D
 	-DGLEW_STATIC
 	-D_CRT_SECURE_NO_WARNINGS
-    ${QT_DEFINITIONS}
+	${QT_DEFINITIONS}
 )
 
 #DepthMapToPointCloud
@@ -73,6 +77,7 @@ add_executable(DepthMapToPointCloud
 	"${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/DepthMapToPointCloud.cpp"
 	${SRC_FILES}
 	${INCLUDE_FILES_MOC}
+	${INCLUDE_FILES}
 	${SHADER_FILES}
 )
 target_compile_features(DepthMapToPointCloud
