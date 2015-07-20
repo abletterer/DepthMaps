@@ -44,25 +44,25 @@ void Viewer::draw()
 	{
 		GLuint vertex_buffer = *it;
 		glm::dmat4 mvp_matrix_o(2.37193, 0, 0, 0,
-								0, 2.15934, -0.674706, -0.447214,
-								0, -1.07967, -1.34941, -0.894427,
-								0.0399307, -0.239169, 0.288652, 0.374409
-		);
+			0, 2.15934, -0.674706, -0.447214,
+			0, -1.07967, -1.34941, -0.894427,
+			0.0399307, -0.239169, 0.288652, 0.374409
+			);
 
-		 mvp_matrix_o = glm::inverse(mvp_matrix_o);
+		mvp_matrix_o = glm::inverse(mvp_matrix_o);
 
-		 glm::dmat4 mvp_matrix_d;
-		 this->camera()->getModelViewProjectionMatrix(glm::value_ptr(mvp_matrix_d));
+		glm::dmat4 mvp_matrix_d;
+		this->camera()->getModelViewProjectionMatrix(glm::value_ptr(mvp_matrix_d));
 
-		 mvp_matrix_o = mvp_matrix_d*mvp_matrix_o;
+		mvp_matrix_o = mvp_matrix_d*mvp_matrix_o;
 
-		 for(int i = 0; i < 4; ++i)
-		 {
-			 for(int j = 0; j < 4; ++j)
-			 {
-				 mvp_matrix_f[i*4+j] = (GLfloat)mvp_matrix_o[i][j];
-			 }
-		 }
+		for(int i = 0; i < 4; ++i)
+		{
+			for(int j = 0; j < 4; ++j)
+			{
+				mvp_matrix_f[i*4+j] = (GLfloat)mvp_matrix_o[i][j];
+			}
+		}
 
 		// Send our transformation to the currently bound shader,
 		// in the "MVP" uniform
@@ -82,7 +82,7 @@ void Viewer::draw()
 		   GL_FALSE,           // normalized?
 		   0,                  // stride
 		   (void*)0            // array buffer offset
-		);
+		   );
 
 		glDrawArrays(GL_POINTS, 0, nb_points_buffers[it-vertex_buffers.begin()]);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
@@ -130,7 +130,7 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/bunny/DepthMaps/512x512/";
+	str += "/Projets/Results/bunny/DepthMaps/32x32/";
 
 	int width, height;
 	loadDepthMaps(str, depth_maps, width, height, ORIGINAL);
@@ -210,9 +210,9 @@ void Viewer::init()
 		std::cout << "-----------" << std::endl;
 
 		glUnmapBuffer(GL_ARRAY_BUFFER);
-//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-//		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+//		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
 	glBindVertexArray(0);
