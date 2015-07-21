@@ -1,5 +1,7 @@
 #include <QGLViewer/qglviewer.h>
 
+#include <glm/glm.hpp>
+
 class Viewer : public QGLViewer
 {
 	protected :
@@ -13,6 +15,6 @@ class Viewer : public QGLViewer
 	std::vector<GLuint> vertex_arrays;
 	std::vector<GLuint> vertex_buffers;
 	std::vector<int> nb_points_buffers;
-	GLfloat mvp_matrix_f[16];
+	std::vector<glm::mat4> mvp_matrices;
 
 };

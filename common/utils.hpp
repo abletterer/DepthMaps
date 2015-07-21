@@ -16,6 +16,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
+#include <glm/glm.hpp>
+
 namespace fs = boost::filesystem;
 
 enum file_type
@@ -25,66 +27,96 @@ enum file_type
 	DENSITY = 2
 };
 
-void loadDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps, int& width, int& height, const file_type type)
+void loadDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps, std::vector<glm::mat4>& matrices, int& width, int& height, const file_type type)
 {
 	fs::path directory(directory_name);
-	fs::directory_iterator end_iter;
 
 	if ( fs::exists(directory) && fs::is_directory(directory))
 	{
-		boost::regex filter;
+		std::vector<fs::path> files;
+		std::copy(fs::directory_iterator(directory), fs::directory_iterator(), std::back_inserter(files));
+		std::sort(files.begin(), files.end());
+		boost::regex filter_type;
 		switch(type)
 		{
 			case ORIGINAL:
-			filter.set_expression(".*originalDepthMap.dat");
+			filter_type.set_expression(".*originalDepthMap.dat");
 			break;
 			case VISIBILITY:
-			filter.set_expression(".*modifiedDepthMap-Visibility.dat");
+			filter_type.set_expression(".*modifiedDepthMap-Visibility.dat");
 			break;
 			case DENSITY:
-			filter.set_expression(".*modifiedDepthMap-Density.dat");
+			filter_type.set_expression(".*modifiedDepthMap-Density.dat");
 			break;
 			default:
-			filter.set_expression("-");
+			filter_type.set_expression("-");
 			break;
 		}
 		boost::smatch what;
 		int count;
-		for(fs::directory_iterator dir_iter(directory) ; dir_iter != end_iter && count < 2; ++dir_iter)
+		boost::regex filter_matrix(".*MVPMatrix.dat");
+		for(std::vector<fs::path>::const_iterator dir_iter = files.begin() ; dir_iter != files.end(); ++dir_iter)
 		{
-			if (fs::is_regular_file(dir_iter->status()))
+			if(boost::regex_match(dir_iter->filename().string(), what, filter_type))
 			{
-				if(boost::regex_match(dir_iter->path().filename().string(), what, filter))
+				std::vector<GLfloat> depth_map;
+				std::ifstream file(directory_name+dir_iter->filename().string());
+				std::string line;
+
+				if(file.is_open())
 				{
-					std::vector<GLfloat> depth_map;
-					std::ifstream file(directory_name+dir_iter->path().filename().string());
-					std::string line;
+					getline(file, line);
+					std::istringstream is_before(line);
+					std::vector<GLfloat> tmp_vec((std::istream_iterator<GLfloat>(is_before)),
+						std::istream_iterator<GLfloat>());
+					depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
+					width = depth_map.size();
 
-					if(file.is_open())
+					while (getline(file, line))
 					{
-						getline(file, line);
-						std::istringstream is_before( line );
-						std::vector<GLfloat> tmp_vec((std::istream_iterator<GLfloat>(is_before)),
-							std::istream_iterator<GLfloat>());
+						std::istringstream is(line);
+						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
 						depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
-						width = depth_map.size();
-
-						while (getline( file, line )) 
-						{
-							std::istringstream is( line );
-							std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
-							depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
-						}
-
-						height = depth_map.size()/width;
-
-						depth_maps.push_back(depth_map);
 					}
-					else
-					{
-						std::cerr << "Problème à l'ouverture du fichier" << std::endl;
-					}
+
+					height = depth_map.size()/width;
+
+					depth_maps.push_back(depth_map);
 					++count;
+				}
+				else
+				{
+					std::cerr << "Problème à l'ouverture du fichier" << std::endl;
+				}
+			}
+			else if(boost::regex_match(dir_iter->filename().string(), what, filter_matrix))
+			{
+				std::ifstream file(directory_name+dir_iter->filename().string());
+				std::string line;
+
+				if(file.is_open())
+				{
+					glm::mat4 tmp_mat;
+					int count = 0;
+					while (getline( file, line ) && count < 4)
+					{
+						std::istringstream is(line);
+						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
+
+						for(int i = 0; i < tmp_vec.size(); ++i)
+						{
+							tmp_mat[count][i] = tmp_vec[i];
+						}
+						++count;
+					}
+
+					tmp_mat = glm::inverse(tmp_mat);
+
+					matrices.push_back(tmp_mat);
+				}
+				else
+				{
+					std::cerr << "Problème à l'ouverture du fichier" << std::endl;
 				}
 			}
 		}
