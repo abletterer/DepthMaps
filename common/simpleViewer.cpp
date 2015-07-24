@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <iostream>
+#include <chrono>
 
 // Include GLEW
 #include <GL/glew.h>
@@ -40,14 +41,14 @@ void Viewer::draw()
    // Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for(int i = 0; i < 1; ++i)
+	for(int i = 0; i < vertex_buffers[i]; ++i)
 	{
 		GLuint& vertex_buffer = vertex_buffers[i];
 
-		glm::dmat4 mvp_matrix_d;
-		this->camera()->getModelViewProjectionMatrix(glm::value_ptr(mvp_matrix_d));
+		dmat4 mvp_matrix_d;
+		this->camera()->getModelViewProjectionMatrix(value_ptr(mvp_matrix_d));
 
-		glm::mat4 mvp_matrix_o;
+		mat4 mvp_matrix_o;
 
 		for(int j = 0; j < 4; ++j)
 		{
@@ -61,7 +62,7 @@ void Viewer::draw()
 
 		// Send our transformation to the currently bound shader,
 		// in the "MVP" uniform
-		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, glm::value_ptr(mvp_matrix_o));  //&MVP[0][0]
+		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix_o));  //&MVP[0][0]
 
 		// Use our shader
 		glUseProgram(render_programID);
@@ -100,6 +101,7 @@ void Viewer::init()
 		return;
 	}
 
+	this->camera()->setZClippingCoefficient(1000.f);
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -123,12 +125,17 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/bunny/DepthMaps/512x512/";
+	str += "/Projets/Results/ramsesses/DepthMaps/512x512/";
 
 	int width, height;
 	loadDepthMaps(str, depth_maps, mvp_matrices, width, height, ORIGINAL);
 
+	std::cout << "Cartes de profondeur chargées" << std::endl;
+
+	std::chrono::high_resolution_clock::time_point start_t = std::chrono::high_resolution_clock::now();
+
 	//Count the number of non-black points (points not belonging to the background);
+	int nb_points_total = 0;
 	nb_points_buffers.reserve(depth_maps.size());
 	for(std::vector<std::vector<GLfloat>>::const_iterator it = depth_maps.begin(); it != depth_maps.end(); ++it )
 	{
@@ -137,19 +144,21 @@ void Viewer::init()
 		for(std::vector<GLfloat>::const_iterator it2 = depth_map.begin(); it2 != depth_map.end(); ++it2)
 		{
 			GLfloat value = *it2;
-			if(fabs(1.f-value) > FLT_EPSILON)
+			if(0.9f-value > FLT_EPSILON)
 			{
 				++nb_points;
 			}
 		}
+		nb_points_total += nb_points;
 		nb_points_buffers.push_back(nb_points);
 	}
+
+	std::cout << "Nuage composé de " << nb_points_total << " point(s)." << std::endl;
 
 	glUseProgram(compute_programID);
 
 	glUniform1i(glGetUniformLocation(compute_programID, "width"), width);
 	glUniform1i(glGetUniformLocation(compute_programID, "height"), height);
-
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -172,11 +181,13 @@ void Viewer::init()
 	vertex_arrays.resize(depth_maps.size(), 0);
 	vertex_buffers.resize(depth_maps.size(), 0);
 
-	for(int i = 0; i < 1; ++i)
+	for(int i = 0; i < vertex_buffers.size(); ++i)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width,
 			height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
+
+		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 
 		GLuint& vertex_array = vertex_arrays[i];
 		GLuint& vertex_buffer = vertex_buffers[i];
@@ -187,34 +198,36 @@ void Viewer::init()
 		glGenBuffers(1, &vertex_buffer);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
 
-		glm::vec4* init_vec = new glm::vec4[nb_points_buffers[i]];
+		vec4* init_vec = new vec4[nb_points_buffers[i]];
 
 		glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points_buffers[i] * sizeof(vec4), init_vec, GL_DYNAMIC_DRAW);
-
-//		GLint value = 0;
-//		glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &value);
-
-//		std::cout << value << std::endl;
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 		glDispatchCompute(width/16, height/16, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-		glm::vec4* ptr = (glm::vec4*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+//		vec4* ptr = (vec4*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
-		for(int j = 0; j < nb_points_buffers[i]; ++j)
-		{
-			std::cout << ptr[j].x << " " << ptr[j].y << " " << ptr[j].z << " " << ptr[j].w << std::endl;
-		}
-		std::cout << "-----------" << std::endl;
-		std::cout << "-----------" << std::endl;
-		std::cout << "-----------" << std::endl;
+//		for(int j = 0; j < nb_points_buffers[i]; ++j)
+//		{
+//			std::cout << ptr[j].x << " " << ptr[j].y << " " << ptr[j].z << " " << ptr[j].w << std::endl;
+//		}
+//		std::cout << "-----------" << std::endl;
+//		std::cout << "-----------" << std::endl;
+//		std::cout << "-----------" << std::endl;
 
-		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+//		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
 		glBindVertexArray(0);
-}
+	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	std::chrono::high_resolution_clock::time_point end_t = std::chrono::high_resolution_clock::now();
+
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( end_t - start_t ).count();
+
+	std::cout << "Temps de génération des VBO : " << duration/1000 << " ms" << std::endl;
 }
 
 QString Viewer::helpString() const
