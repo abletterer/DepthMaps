@@ -41,28 +41,28 @@ void Viewer::draw()
    // Clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	dmat4 mvp_matrix_d;
+	this->camera()->getModelViewProjectionMatrix(value_ptr(mvp_matrix_d));
+
+	mat4 mvp_matrix_o;
+
+	for(int j = 0; j < 4; ++j)
+	{
+		for(int k = 0; k < 4; ++k)
+		{
+			mvp_matrix_o[j][k] = (GLfloat)mvp_matrix_d[j][k];
+		}
+	}
+
 	for(int i = 0; i < vertex_buffers[i]; ++i)
 	{
 		GLuint& vertex_buffer = vertex_buffers[i];
 
-		dmat4 mvp_matrix_d;
-		this->camera()->getModelViewProjectionMatrix(value_ptr(mvp_matrix_d));
-
-		mat4 mvp_matrix_o;
-
-		for(int j = 0; j < 4; ++j)
-		{
-			for(int k = 0; k < 4; ++k)
-			{
-				mvp_matrix_o[j][k] = (GLfloat)mvp_matrix_d[j][k];
-			}
-		}
-
-		mvp_matrix_o = mvp_matrix_o*mvp_matrices[i];
+		mat4 mvp_matrix = mvp_matrix_o*mvp_matrices[i];
 
 		// Send our transformation to the currently bound shader,
 		// in the "MVP" uniform
-		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix_o));  //&MVP[0][0]
+		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
 
 		// Use our shader
 		glUseProgram(render_programID);
@@ -101,7 +101,7 @@ void Viewer::init()
 		return;
 	}
 
-	this->camera()->setZClippingCoefficient(1000.f);
+	this->camera()->setZClippingCoefficient(10.f);
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -125,10 +125,12 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/ramsesses/DepthMaps/512x512/";
+//	str += "/Projets/Results/sphere/DepthMaps/512x512/";
+	str += "/Projets/Models/Kinect/";
 
 	int width, height;
-	loadDepthMaps(str, depth_maps, mvp_matrices, width, height, ORIGINAL);
+//	loadSimulatedDepthMaps(str, depth_maps, mvp_matrices, width, height, ORIGINAL);
+	loadRealDepthMaps(str, depth_maps, mvp_matrices, width, height);
 
 	std::cout << "Cartes de profondeur chargées" << std::endl;
 
@@ -183,7 +185,7 @@ void Viewer::init()
 
 	for(int i = 0; i < vertex_buffers.size(); ++i)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width,
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width,
 			height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
 
@@ -206,18 +208,6 @@ void Viewer::init()
 		glDispatchCompute(width/16, height/16, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-//		vec4* ptr = (vec4*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-
-//		for(int j = 0; j < nb_points_buffers[i]; ++j)
-//		{
-//			std::cout << ptr[j].x << " " << ptr[j].y << " " << ptr[j].z << " " << ptr[j].w << std::endl;
-//		}
-//		std::cout << "-----------" << std::endl;
-//		std::cout << "-----------" << std::endl;
-//		std::cout << "-----------" << std::endl;
-
-//		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
 		glBindVertexArray(0);
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -225,7 +215,7 @@ void Viewer::init()
 
 	std::chrono::high_resolution_clock::time_point end_t = std::chrono::high_resolution_clock::now();
 
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( end_t - start_t ).count();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_t-start_t).count();
 
 	std::cout << "Temps de génération des VBO : " << duration/1000 << " ms" << std::endl;
 }
