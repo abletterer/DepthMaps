@@ -35,7 +35,6 @@ using namespace std;
 //   glDeleteVertexArrays(1, &VertexArrayID);
 // }
 
-// Draws a spiral
 void Viewer::draw()
 {
    // Clear the screen
@@ -54,38 +53,39 @@ void Viewer::draw()
 		}
 	}
 
-	for(int i = 0; i < vertex_buffers[i]; ++i)
-	{
-		GLuint& vertex_buffer = vertex_buffers[i];
+	// Use our shader
+	glUseProgram(m_render_programID);
 
-		mat4 mvp_matrix = mvp_matrix_o*mvp_matrices[i];
+	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
+	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
+
+	for(int i = 0; i < m_vertex_buffers[i]; ++i)
+	{
+
+		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
 
 		// Send our transformation to the currently bound shader,
 		// in the "MVP" uniform
-		glUniformMatrix4fv(glGetUniformLocation(render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
+		glUniformMatrix4fv(glGetUniformLocation(m_render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
 
-		// Use our shader
-		glUseProgram(render_programID);
-
-		glBindVertexArray(vertex_arrays[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+		glBindVertexArray(m_vertex_arrays[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffers[i]);
+		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(
-		   0,                  // Must match the layout location in the shader.
-		   4,                  // size
-		   GL_FLOAT,           // type
-		   GL_FALSE,           // normalized?
-		   0,                  // stride
-		   (void*)0            // array buffer offset
+		glVertexAttribIPointer(
+		   0,					// Must match the layout location in the shader.
+		   1,					// size
+		   GL_UNSIGNED_INT,		// type
+		   GL_FALSE,			// normalized?
+		   (void*)0				// array buffer offset
 		   );
 
-		glDrawArrays(GL_POINTS, 0, nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
+		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Viewer::init()
@@ -101,7 +101,8 @@ void Viewer::init()
 		return;
 	}
 
-	this->camera()->setZClippingCoefficient(10.f);
+	this->camera()->setZClippingCoefficient(1000.f);
+
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -119,58 +120,54 @@ void Viewer::init()
 	ShaderProgram compute_program;
 	compute_program.loadShader(GL_COMPUTE_SHADER, "../shaders/ComputeShading.cs");
 
-	render_programID = shader_program.getProgramId();
-	compute_programID = compute_program.getProgramId();
+	m_render_programID = shader_program.getProgramId();
+	m_compute_programID = compute_program.getProgramId();
 
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-//	str += "/Projets/Results/sphere/DepthMaps/512x512/";
-	str += "/Projets/Models/Kinect/";
+	str += "/Projets/Results/ramsesses/DepthMaps/1024x1024/";
+//	str += "/Projets/Models/Kinect/";
 
-	int width, height;
-//	loadSimulatedDepthMaps(str, depth_maps, mvp_matrices, width, height, ORIGINAL);
-	loadRealDepthMaps(str, depth_maps, mvp_matrices, width, height);
+	std::vector<GLfloat> params;
 
-	std::cout << "Cartes de profondeur chargées" << std::endl;
+	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
 
 	std::chrono::high_resolution_clock::time_point start_t = std::chrono::high_resolution_clock::now();
 
+	loadSimulatedDepthMaps(str, depth_maps, m_mvp_matrices, m_width, m_height, ORIGINAL);
+//	loadRealDepthMaps(str, depth_maps, m_mvp_matrices, m_width, m_height, params);
+
+	std::chrono::high_resolution_clock::time_point end_t = std::chrono::high_resolution_clock::now();
+
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_t-start_t).count();
+
+	std::cout << ".. fait en " << duration/1000 << " ms" << std::endl;
+
+	std::cout << "Génération des VBO de chaque carte de profondeur .." << std::flush;
+
+	start_t = std::chrono::high_resolution_clock::now();
+
 	//Count the number of non-black points (points not belonging to the background);
 	int nb_points_total = 0;
-	nb_points_buffers.reserve(depth_maps.size());
+	m_nb_points_buffers.reserve(depth_maps.size());
 	for(std::vector<std::vector<GLfloat>>::const_iterator it = depth_maps.begin(); it != depth_maps.end(); ++it )
 	{
 		std::vector<GLfloat> depth_map = *it;
 		int nb_points = 0;
 		for(std::vector<GLfloat>::const_iterator it2 = depth_map.begin(); it2 != depth_map.end(); ++it2)
 		{
-			GLfloat value = *it2;
-			if(0.9f-value > FLT_EPSILON)
-			{
+//			GLfloat value = *it2;
+//			if(value > 0 && value < 1.f)
+//			{
 				++nb_points;
-			}
+//			}
 		}
 		nb_points_total += nb_points;
-		nb_points_buffers.push_back(nb_points);
+		m_nb_points_buffers.push_back(nb_points);
 	}
 
-	std::cout << "Nuage composé de " << nb_points_total << " point(s)." << std::endl;
-
-	glUseProgram(compute_programID);
-
-	glUniform1i(glGetUniformLocation(compute_programID, "width"), width);
-	glUniform1i(glGetUniformLocation(compute_programID, "height"), height);
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	GLuint textureID = 0;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glUseProgram(m_compute_programID);
 
 	int counter = 0;
 
@@ -180,19 +177,29 @@ void Viewer::init()
 	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
 
-	vertex_arrays.resize(depth_maps.size(), 0);
-	vertex_buffers.resize(depth_maps.size(), 0);
+	m_vertex_arrays.resize(depth_maps.size(), 0);
+	m_vertex_buffers.resize(depth_maps.size(), 0);
+	m_textures.resize(depth_maps.size(), 0);
 
-	for(int i = 0; i < vertex_buffers.size(); ++i)
+	for(int i = 0; i < m_vertex_buffers.size(); ++i)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width,
-			height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+		GLuint& vertex_array = m_vertex_arrays[i];
+		GLuint& vertex_buffer = m_vertex_buffers[i];
+
+		GLuint& texture = m_textures[i];
+
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width,
+			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
 
 		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
-
-		GLuint& vertex_array = vertex_arrays[i];
-		GLuint& vertex_buffer = vertex_buffers[i];
 
 		glGenVertexArrays(1, &vertex_array);
 		glBindVertexArray(vertex_array);
@@ -200,24 +207,43 @@ void Viewer::init()
 		glGenBuffers(1, &vertex_buffer);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
 
-		vec4* init_vec = new vec4[nb_points_buffers[i]];
+		GLuint* init_vec = new GLuint[m_nb_points_buffers[i]];
 
-		glBufferData(GL_SHADER_STORAGE_BUFFER, nb_points_buffers[i] * sizeof(vec4), init_vec, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_nb_points_buffers[i] * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_nb_points_buffers[i] * sizeof(GLuint), init_vec);
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
-		glDispatchCompute(width/16, height/16, 1);
+		glDispatchCompute(m_width/16, m_height/16, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+//		GLuint* ptr = (GLuint*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+
+//		for(int j = 0; j < nb_points_buffers[i]; ++j)
+//		{
+//			std::cout << ptr[j] << std::endl;
+//		}
+//		std::cout << "-----------" << std::endl;
+//		std::cout << "-----------" << std::endl;
+//		std::cout << "-----------" << std::endl;
+
+//		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
 		glBindVertexArray(0);
 	}
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	std::chrono::high_resolution_clock::time_point end_t = std::chrono::high_resolution_clock::now();
+	end_t = std::chrono::high_resolution_clock::now();
 
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_t-start_t).count();
+	duration = std::chrono::duration_cast<std::chrono::microseconds>(end_t-start_t).count();
 
-	std::cout << "Temps de génération des VBO : " << duration/1000 << " ms" << std::endl;
+	std::cout << ".. fait en " << duration/1000 << " ms" << std::endl;
+
+	std::cout << "Nuage composé de " << nb_points_total << " point(s) répartis sur "
+			  << depth_maps.size() << " cartes de profondeur de " << m_width << "x" << m_height << " pixels." << std::endl;
 }
 
 QString Viewer::helpString() const

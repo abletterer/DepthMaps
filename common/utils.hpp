@@ -123,7 +123,8 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::
 	}
 }
 
-void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps, std::vector<glm::mat4>& matrices, int& width, int& height)
+void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps,
+					   std::vector<glm::mat4>& matrices, int& width, int& height, std::vector<GLfloat>& params)
 {
 	fs::path directory(directory_name);
 
@@ -179,6 +180,8 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 			}
 		}
 
+		params.reserve(6);
+
 		for(std::vector<fs::path>::const_iterator dir_iter = files.begin() ; dir_iter != files.end(); ++dir_iter)
 		{
 			if(boost::regex_match(dir_iter->filename().string(), what, filter_matrix))
@@ -188,53 +191,25 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 
 				if(file.is_open())
 				{
-					glm::mat4 tmp_mat, ndc_mat, k_mat;
+					glm::mat4 tmp_mat;
 					int count = 0;
 
-					std::vector<GLfloat> params;
-					params.reserve(6);
-
-					for(int i = 0; i < 4; ++i)
-					{
-						for(int j = 0; j < 4; ++j)
-						{
-							k_mat[i][j] = 0;
-							ndc_mat[i][j] = 0;
-						}
-					}
-
 					//Get every intrinsic parameter {fx, fy, cx, cy}
-
 					while (getline( file, line ) && count < 4)
 					{
 						params.push_back(std::stof(line.substr(3)));
 						++count;
 					}
 
-					//Add last two parameters {near, far}
-					params.push_back(0.4); params.push_back(8.0);
-
 					//Construction of the intrinsic matrix
-					k_mat[0][0] = params[0];
-					k_mat[1][1] = params[1];
-					k_mat[2][0] = -params[2];
-					k_mat[2][1] = -params[3];
-					k_mat[2][2] = params[4]+params[5];
-					k_mat[2][3] = -1;
-					k_mat[3][2] = params[4]*params[5];
+					tmp_mat[0][0] = 1./params[0];
+					tmp_mat[1][1] = 1./params[1];
+					tmp_mat[2][0] = -params[2]/params[0];
+					tmp_mat[2][1] = -params[3]/params[1];
+					tmp_mat[2][2] = 1;
+					tmp_mat[3][3] = 1;
 
-					//Construction of the ndc (normalized device coordinates matrix
-					ndc_mat[0][0] = 2./width;
-					ndc_mat[1][1] = 2./(-height);
-					ndc_mat[2][2] = -2./(params[5]-params[4]);
-					ndc_mat[3][0] = -1;
-					ndc_mat[3][1] = 1;
-					ndc_mat[3][2] = -(params[5]+params[4])/(params[5]-params[4]);
-					ndc_mat[3][3] = 1;
-
-					tmp_mat = ndc_mat*k_mat;
-
-					tmp_mat = glm::inverse(tmp_mat);
+//					tmp_mat = glm::inverse(tmp_mat);
 
 					matrices.push_back(tmp_mat);
 				}
