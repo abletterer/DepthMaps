@@ -11,14 +11,14 @@ uniform int width;
 uniform int height;
 
 void main(){
-	float image_x = index/height;
+	float image_x = index/width;
 	float image_y = mod(index,width);
 
 //	float dc1 = -0.0030711016;
 //	float dc2 = 3.3309495161;
 
-	float x = float(image_x)/float(width-1);
-	float y = float(image_y)/float(height-1);
+	float x = image_x/float(width-1);
+	float y = image_y/float(height-1);
 
 	float depth = texture2D(in_tex, vec2(x, -y)).x;
 //	float depth = texture2D(in_tex, vec2(x, y)).x;
