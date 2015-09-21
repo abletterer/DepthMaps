@@ -92,8 +92,7 @@ target_link_libraries(DepthMapToPointCloud
 set_target_properties(DepthMapToPointCloud PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/DepthMapToPointCloud/")
 
 SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
-SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
-
+SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/shaders/.*")
 
 if (NOT ${CMAKE_GENERATOR} MATCHES "Xcode" )
 add_custom_command(

@@ -1,33 +1,24 @@
 #version 430 core
 
 // Input vertex data, different for all executions of this shader.
-layout(location = 0) in uint index;
+layout(location = 0) in vec2 pixel;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
-uniform sampler2D in_tex;
-
 uniform int width;
 uniform int height;
 
 void main(){
-	float image_x = index/height;
-	float image_y = mod(index,width);
-
-//	float dc1 = -0.0030711016;
-//	float dc2 = 3.3309495161;
+	float image_x = pixel.x/width;
+	float image_y = mod(pixel.x,width);
 
 	float x = float(image_x)/float(width-1);
 	float y = float(image_y)/float(height-1);
 
-	float depth = texture2D(in_tex, vec2(x, -y)).x;
-//	float depth = texture2D(in_tex, vec2(x, y)).x;
-//	depth = depth*2-1;
-//	depth = 1./(depth*dc1-dc2);
+	float depth = pixel.y;
 
 	if(depth > 0 && depth < 1)
 	{
-//		vec4 vertex_out = vec4(image_x*depth, image_y*depth, depth, 1);
 		vec4 vertex_out = vec4(x*2-1, y*2-1, depth, 1);
 		gl_Position =  MVP * vertex_out;
 	}

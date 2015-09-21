@@ -70,16 +70,17 @@ void Viewer::draw()
 
 		glBindVertexArray(m_vertex_arrays[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, m_index_buffers[i]);
-		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
+//		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(
-		   0,					// Must match the layout location in the shader.
-		   1,					// size
-		   GL_UNSIGNED_INT,		// type
-		   GL_FALSE,			// normalized?
-		   (void*)0				// array buffer offset
-		   );
+		glVertexAttribPointer(
+			0,			// Must match the layout location in the shader.
+			2,			// size
+			GL_FLOAT,	// type
+			GL_FALSE,	// normalized?
+			0,			//stride
+			(void*)0	// array buffer offset
+		);
 
 		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
@@ -181,19 +182,21 @@ void Viewer::init()
 	m_index_buffers.resize(depth_maps.size(), 0);
 	m_textures.resize(depth_maps.size(), 0);
 
+	glUniform1i(glGetUniformLocation(m_compute_programID, "width"), m_width);
+	glUniform1i(glGetUniformLocation(m_compute_programID, "height"), m_height);
+
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	for(int i = 0; i < m_index_buffers.size(); ++i)
 	{
 		GLuint& vertex_array = m_vertex_arrays[i];
 		GLuint& vertex_buffer = m_index_buffers[i];
-
-		GLuint& texture = m_textures[i];
-
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width,
 			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
@@ -207,11 +210,11 @@ void Viewer::init()
 		glGenBuffers(1, &vertex_buffer);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
 
-		GLuint* init_vec = new GLuint[m_nb_points_buffers[i]];
+		vec2* init_vec = new vec2[m_nb_points_buffers[i]];
 
-		glBufferData(GL_SHADER_STORAGE_BUFFER, m_nb_points_buffers[i] * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
 
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_nb_points_buffers[i] * sizeof(GLuint), init_vec);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_nb_points_buffers[i] * sizeof(vec2), init_vec);
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 		glDispatchCompute(m_width/16, m_height/16, 1);
