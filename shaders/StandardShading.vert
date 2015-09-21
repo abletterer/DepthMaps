@@ -9,8 +9,8 @@ uniform int width;
 uniform int height;
 
 void main(){
-	float image_x = pixel.x/(width-1);
-	float image_y = mod(pixel.x,(width-1));
+	int image_x = int(int(pixel.x)/(width-1));
+	int image_y = int(mod(int(pixel.x),width-1));
 
 	float x = float(image_x)/float(width-1);
 	float y = float(image_y)/float(height-1);

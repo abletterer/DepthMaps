@@ -127,7 +127,7 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/ramsesses/DepthMaps/256x256/";
+	str += "/Projets/Results/ramsesses/DepthMaps/1024x1024/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::vector<GLfloat> params;
