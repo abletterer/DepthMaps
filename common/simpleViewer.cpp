@@ -172,11 +172,11 @@ void Viewer::init()
 
 	int counter = 0;
 
-	GLuint ac_buffer = 0;
-	glGenBuffers(1, &ac_buffer);
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
-	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
+//	GLuint ac_buffer = 0;
+//	glGenBuffers(1, &ac_buffer);
+//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
+//	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
+//	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
 
 	m_vertex_arrays.resize(depth_maps.size(), 0);
 	m_index_buffers.resize(depth_maps.size(), 0);
@@ -202,7 +202,7 @@ void Viewer::init()
 			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
 
-		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
+//		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 
 		glGenVertexArrays(1, &vertex_array);
 		glBindVertexArray(vertex_array);
