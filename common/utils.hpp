@@ -163,7 +163,7 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
 						for(int i = 0; i < tmp_vec.size(); ++i)
 						{
-							tmp_vec[i] = (1-tmp_vec[i])*2-1;	//Convert depth-map from [0;1] to [-1;-1] where -1 is the near_plane and 1 the far_plane
+							tmp_vec[i] = (tmp_vec[i])*2-1;	//Convert depth-map from [0;1] to [-1;1] where -1 is the near_plane and 1 the far_plane
 						}
 						depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
 					}

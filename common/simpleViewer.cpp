@@ -59,7 +59,7 @@ void Viewer::draw()
 	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
 	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
 
-	for(int i = 0; i < m_vertex_buffers[i]; ++i)
+	for(int i = 0; i < m_index_buffers[i]; ++i)
 	{
 
 		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
@@ -69,7 +69,7 @@ void Viewer::draw()
 		glUniformMatrix4fv(glGetUniformLocation(m_render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
 
 		glBindVertexArray(m_vertex_arrays[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffers[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_index_buffers[i]);
 		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
 
 		glEnableVertexAttribArray(0);
@@ -126,7 +126,7 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/ramsesses/DepthMaps/1024x1024/";
+	str += "/Projets/Results/ramsesses/DepthMaps/256x256/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::vector<GLfloat> params;
@@ -178,13 +178,13 @@ void Viewer::init()
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
 
 	m_vertex_arrays.resize(depth_maps.size(), 0);
-	m_vertex_buffers.resize(depth_maps.size(), 0);
+	m_index_buffers.resize(depth_maps.size(), 0);
 	m_textures.resize(depth_maps.size(), 0);
 
-	for(int i = 0; i < m_vertex_buffers.size(); ++i)
+	for(int i = 0; i < m_index_buffers.size(); ++i)
 	{
 		GLuint& vertex_array = m_vertex_arrays[i];
-		GLuint& vertex_buffer = m_vertex_buffers[i];
+		GLuint& vertex_buffer = m_index_buffers[i];
 
 		GLuint& texture = m_textures[i];
 
