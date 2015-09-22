@@ -9,8 +9,8 @@ uniform int height;
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 void main() {
-	vec2 tex_coords = vec2(float(gl_GlobalInvocationID.x)/float(width-1), float(gl_GlobalInvocationID.y)/float(height-1));
+	vec2 tex_coords = vec2(float(gl_GlobalInvocationID.x)/float(width), float(gl_GlobalInvocationID.y)/float(height));
 	float depth = texture(in_tex, vec2(tex_coords.x, -tex_coords.y)).r;	//z in [-1;1]
-	uint index = gl_GlobalInvocationID.x*(width-1)+gl_GlobalInvocationID.y;
+	uint index = gl_GlobalInvocationID.x*width+gl_GlobalInvocationID.y;
 	pixel[index] = vec2(index, depth);
 }

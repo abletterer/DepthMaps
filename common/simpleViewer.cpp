@@ -16,6 +16,8 @@ using namespace glm;
 
 #include <QGLViewer/camera.h>
 
+#include <QKeyEvent>
+
 #include <common/shader.hpp>
 #include <common/utils.hpp>
 
@@ -53,15 +55,18 @@ void Viewer::draw()
 		}
 	}
 
+	int size = 1<<m_level;
+
 	// Use our shader
 	glUseProgram(m_render_programID);
 
-	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
-	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
+	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width-1);
+	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height-1);
+
+	glUniform1i(glGetUniformLocation(m_render_programID, "size"), size);
 
 	for(int i = 0; i < m_index_buffers[i]; ++i)
 	{
-
 		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
 
 		// Send our transformation to the currently bound shader,
@@ -70,7 +75,6 @@ void Viewer::draw()
 
 		glBindVertexArray(m_vertex_arrays[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, m_index_buffers[i]);
-//		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
 
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(
@@ -78,15 +82,17 @@ void Viewer::draw()
 			2,			// size
 			GL_FLOAT,	// type
 			GL_FALSE,	// normalized?
-			0,			//stride
+			size*sizeof(vec2),			//stride
 			(void*)0	// array buffer offset
 		);
 
-		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
+		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]/size);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
+
+	QGLViewer::draw();
 }
 
 void Viewer::init()
@@ -111,7 +117,7 @@ void Viewer::init()
 	glEnable(GL_DEPTH_TEST);
 
   // Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
 
   // Create and compile our GLSL program from the shaders
 	ShaderProgram shader_program;
@@ -121,8 +127,12 @@ void Viewer::init()
 	ShaderProgram compute_program;
 	compute_program.loadShader(GL_COMPUTE_SHADER, "../shaders/ComputeShading.cs");
 
+	ShaderProgram lifting_program;
+	lifting_program.loadShader(GL_COMPUTE_SHADER, "../shaders/LiftingScheme.cs");
+
 	m_render_programID = shader_program.getProgramId();
 	m_compute_programID = compute_program.getProgramId();
+	m_compute_lifting_programID = lifting_program.getProgramId();
 
 	std::vector<std::vector<GLfloat>> depth_maps;
 
@@ -130,14 +140,16 @@ void Viewer::init()
 	str += "/Projets/Results/ramsesses/DepthMaps/1024x1024/";
 //	str += "/Projets/Models/Kinect/";
 
-	std::vector<GLfloat> params;
-
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
 
 	std::chrono::high_resolution_clock::time_point start_t = std::chrono::high_resolution_clock::now();
 
+//	std::vector<GLfloat> params;
+
 	loadSimulatedDepthMaps(str, depth_maps, m_mvp_matrices, m_width, m_height, ORIGINAL);
 //	loadRealDepthMaps(str, depth_maps, m_mvp_matrices, m_width, m_height, params);
+
+	m_level = 0;
 
 	std::chrono::high_resolution_clock::time_point end_t = std::chrono::high_resolution_clock::now();
 
@@ -145,45 +157,26 @@ void Viewer::init()
 
 	std::cout << ".. fait en " << duration/1000 << " ms" << std::endl;
 
-	std::cout << "Génération des VBO de chaque carte de profondeur .." << std::flush;
+	std::cout << "Génération des VBO représentant chaque carte de profondeur .." << std::flush;
 
 	start_t = std::chrono::high_resolution_clock::now();
 
-	//Count the number of non-black points (points not belonging to the background);
-	int nb_points_total = 0;
 	m_nb_points_buffers.reserve(depth_maps.size());
+	int nb_points = m_width*m_height;
+
 	for(std::vector<std::vector<GLfloat>>::const_iterator it = depth_maps.begin(); it != depth_maps.end(); ++it )
 	{
-		std::vector<GLfloat> depth_map = *it;
-		int nb_points = 0;
-		for(std::vector<GLfloat>::const_iterator it2 = depth_map.begin(); it2 != depth_map.end(); ++it2)
-		{
-//			GLfloat value = *it2;
-//			if(value > 0 && value < 1.f)
-//			{
-				++nb_points;
-//			}
-		}
-		nb_points_total += nb_points;
 		m_nb_points_buffers.push_back(nb_points);
 	}
 
 	glUseProgram(m_compute_programID);
 
-	int counter = 0;
-
-//	GLuint ac_buffer = 0;
-//	glGenBuffers(1, &ac_buffer);
-//	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, ac_buffer);
-//	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
-//	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, ac_buffer);
-
 	m_vertex_arrays.resize(depth_maps.size(), 0);
 	m_index_buffers.resize(depth_maps.size(), 0);
 	m_textures.resize(depth_maps.size(), 0);
 
-	glUniform1i(glGetUniformLocation(m_compute_programID, "width"), m_width);
-	glUniform1i(glGetUniformLocation(m_compute_programID, "height"), m_height);
+	glUniform1i(glGetUniformLocation(m_compute_programID, "width"), m_width-1);
+	glUniform1i(glGetUniformLocation(m_compute_programID, "height"), m_height-1);
 
 	GLuint textureID;
 	glGenTextures(1, &textureID);
@@ -201,8 +194,6 @@ void Viewer::init()
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width,
 			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
-
-//		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
 
 		glGenVertexArrays(1, &vertex_array);
 		glBindVertexArray(vertex_array);
@@ -236,7 +227,7 @@ void Viewer::init()
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	end_t = std::chrono::high_resolution_clock::now();
@@ -245,8 +236,7 @@ void Viewer::init()
 
 	std::cout << ".. fait en " << duration/1000 << " ms" << std::endl;
 
-	std::cout << "Nuage composé de " << nb_points_total << " point(s) répartis sur "
-			  << depth_maps.size() << " cartes de profondeur de " << m_width << "x" << m_height << " pixels." << std::endl;
+	std::cout << "Nuage composé de " << depth_maps.size() << " cartes de profondeur de " << m_width << "x" << m_height << " pixels." << std::endl;
 }
 
 QString Viewer::helpString() const
@@ -267,4 +257,103 @@ QString Viewer::helpString() const
 	text += "See the <b>Mouse</b> tab and the documentation web pages for details.<br><br>";
 	text += "Press <b>Escape</b> to exit the viewer.";
 	return text;
+}
+
+void Viewer::decompose()
+{
+	int size = 1<<m_level;
+
+	if(size < m_width && size < m_height)
+	{
+		glUseProgram(m_compute_lifting_programID);
+
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
+
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
+
+		for(int i = 0; i < m_index_buffers.size(); ++i)
+		{
+			GLuint& vertex_array = m_vertex_arrays[i];
+			GLuint& vertex_buffer = m_index_buffers[i];
+
+			glBindVertexArray(vertex_array);
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
+
+			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
+
+			glDispatchCompute(m_width/16, m_height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
+
+			glDispatchCompute(m_width/16, m_height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		m_level++;
+	}
+}
+
+void Viewer::reconstruct()
+{
+	int size = 1<<m_level;
+
+	if(m_level > 0)
+	{
+		glUseProgram(m_compute_lifting_programID);
+
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width-1);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height-1);
+
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), false);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size);
+
+		for(int i = 0; i < m_index_buffers.size(); ++i)
+		{
+			GLuint& vertex_array = m_vertex_arrays[i];
+			GLuint& vertex_buffer = m_index_buffers[i];
+
+			glBindVertexArray(vertex_array);
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
+
+			glDispatchCompute(m_width/16, m_height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		m_level--;
+	}
+}
+
+void Viewer::keyPressEvent(QKeyEvent* event)
+{
+	switch(event->key())
+	{
+		case Qt::Key_D:
+			std::cout << "Décomposition .." << std::flush;
+			decompose();
+			std::cout << ".. fait (Niveau " << m_level << ")" << std::endl;
+			updateGL();
+		break;
+		case Qt::Key_R:
+			std::cout << "Reconstruction .." << std::flush;
+			reconstruct();
+			std::cout << ".. fait (Niveau " << m_level << ")" << std::endl;
+			updateGL();
+		break;
+		default:
+			QGLViewer::keyPressEvent(event);
+		break;
+	}
 }

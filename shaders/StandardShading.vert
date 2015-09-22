@@ -8,22 +8,31 @@ uniform mat4 MVP;
 uniform int width;
 uniform int height;
 
+uniform int size;
+
 void main(){
-	int image_x = int(int(pixel.x)/(width-1));
-	int image_y = int(mod(int(pixel.x),width-1));
+	int image_x = int(int(pixel.x)/width);
+	int image_y = int(mod(int(pixel.x),width));
 
-	float x = float(image_x)/float(width-1);
-	float y = float(image_y)/float(height-1);
-
-	float depth = pixel.y;
-
-	if(depth > 0 && depth < 1)
+	if(mod(image_x, size)==0 && mod(image_y, size)==0)
 	{
-		vec4 vertex_out = vec4(x*2-1, y*2-1, depth, 1);
-		gl_Position =  MVP * vertex_out;
+		float x = float(image_x)/float(width);
+		float y = float(image_y)/float(height);
+
+		float depth = pixel.y;
+
+		if(depth > 0 && depth < 1)
+		{
+			vec4 vertex_out = vec4(x*2-1, y*2-1, depth, 1);
+			gl_Position =  MVP * vertex_out;
+		}
+		else
+		{
+			gl_Position = vec4(0, 0, -2, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
+		}
 	}
 	else
 	{
-		gl_Position = vec4(2, 0, 0, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
+		gl_Position = vec4(0, 0, -2, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
 	}
 }
