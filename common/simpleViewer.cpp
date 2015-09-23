@@ -73,7 +73,6 @@ void Viewer::draw()
 		// in the "MVP" uniform
 		glUniformMatrix4fv(glGetUniformLocation(m_render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
 
-		glBindVertexArray(m_vertex_arrays[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, m_index_buffers[i]);
 
 		glEnableVertexAttribArray(0);
@@ -89,7 +88,6 @@ void Viewer::draw()
 		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]/size);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
 	}
 
 	QGLViewer::draw();
@@ -115,9 +113,6 @@ void Viewer::init()
 
   // Enable depth test
 	glEnable(GL_DEPTH_TEST);
-
-  // Cull triangles which normal is not towards the camera
-//	glEnable(GL_CULL_FACE);
 
   // Create and compile our GLSL program from the shaders
 	ShaderProgram shader_program;
@@ -171,7 +166,6 @@ void Viewer::init()
 
 	glUseProgram(m_compute_programID);
 
-	m_vertex_arrays.resize(depth_maps.size(), 0);
 	m_index_buffers.resize(depth_maps.size(), 0);
 	m_textures.resize(depth_maps.size(), 0);
 
@@ -188,18 +182,14 @@ void Viewer::init()
 
 	for(int i = 0; i < m_index_buffers.size(); ++i)
 	{
-		GLuint& vertex_array = m_vertex_arrays[i];
 		GLuint& vertex_buffer = m_index_buffers[i];
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width,
 			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
 			&depth_maps[i][0]);
 
-		glGenVertexArrays(1, &vertex_array);
-		glBindVertexArray(vertex_array);
-
 		glGenBuffers(1, &vertex_buffer);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
 		vec2* init_vec = new vec2[m_nb_points_buffers[i]];
 
@@ -222,12 +212,9 @@ void Viewer::init()
 //		std::cout << "-----------" << std::endl;
 
 //		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-		glBindVertexArray(0);
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	end_t = std::chrono::high_resolution_clock::now();
@@ -273,14 +260,22 @@ void Viewer::decompose()
 		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size);
 		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
 
+		GLuint copy_buffer = 0;
+		glGenBuffers(1, &copy_buffer);
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, copy_buffer);
+
 		for(int i = 0; i < m_index_buffers.size(); ++i)
 		{
-			GLuint& vertex_array = m_vertex_arrays[i];
 			GLuint& vertex_buffer = m_index_buffers[i];
 
-			glBindVertexArray(vertex_array);
+			glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+			glBindBuffer(GL_COPY_WRITE_BUFFER, copy_buffer);
 
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
+			glBufferData(GL_COPY_WRITE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
+
+			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
 			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
@@ -288,13 +283,20 @@ void Viewer::decompose()
 			glDispatchCompute(m_width/16, m_height/16, 1);
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+
 			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
 
 			glDispatchCompute(m_width/16, m_height/16, 1);
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		}
 
-		glBindVertexArray(0);
+		glBindBuffer(GL_COPY_READ_BUFFER, 0);
+		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+		glDeleteBuffers(1, &copy_buffer);
+
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		m_level++;
@@ -317,12 +319,8 @@ void Viewer::reconstruct()
 
 		for(int i = 0; i < m_index_buffers.size(); ++i)
 		{
-			GLuint& vertex_array = m_vertex_arrays[i];
 			GLuint& vertex_buffer = m_index_buffers[i];
 
-			glBindVertexArray(vertex_array);
-
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_buffer);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
 			glDispatchCompute(m_width/16, m_height/16, 1);

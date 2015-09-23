@@ -18,7 +18,6 @@ class Viewer : public QGLViewer
 	GLuint m_render_programID;
 	GLuint m_compute_programID;
 	GLuint m_compute_lifting_programID;
-	std::vector<GLuint> m_vertex_arrays;
 	std::vector<GLuint> m_index_buffers;
 	std::vector<GLuint> m_textures;
 	std::vector<int> m_nb_points_buffers;
