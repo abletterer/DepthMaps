@@ -11,13 +11,13 @@ uniform int height;
 uniform int size;
 
 void main(){
-	int image_x = int(int(pixel.x)/width);
+	int image_x = int(pixel.x)/width;
 	int image_y = int(mod(int(pixel.x),width));
 
 	if(mod(image_x, size)==0 && mod(image_y, size)==0)
 	{
-		float x = float(image_x)/float(width);
-		float y = float(image_y)/float(height);
+		float x = float(image_x)/float(width-1);
+		float y = float(image_y)/float(height-1);
 
 		float depth = pixel.y;
 

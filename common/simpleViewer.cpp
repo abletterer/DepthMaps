@@ -60,8 +60,8 @@ void Viewer::draw()
 	// Use our shader
 	glUseProgram(m_render_programID);
 
-	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width-1);
-	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height-1);
+	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
+	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
 
 	glUniform1i(glGetUniformLocation(m_render_programID, "size"), size);
 
@@ -82,7 +82,7 @@ void Viewer::draw()
 			2,			// size
 			GL_FLOAT,	// type
 			GL_FALSE,	// normalized?
-			size*sizeof(vec2),			//stride
+			sizeof(vec2)*size,			//stride
 			(void*)0	// array buffer offset
 		);
 
@@ -175,8 +175,8 @@ void Viewer::init()
 	m_index_buffers.resize(depth_maps.size(), 0);
 	m_textures.resize(depth_maps.size(), 0);
 
-	glUniform1i(glGetUniformLocation(m_compute_programID, "width"), m_width-1);
-	glUniform1i(glGetUniformLocation(m_compute_programID, "height"), m_height-1);
+	glUniform1i(glGetUniformLocation(m_compute_programID, "width"), m_width);
+	glUniform1i(glGetUniformLocation(m_compute_programID, "height"), m_height);
 
 	GLuint textureID;
 	glGenTextures(1, &textureID);
@@ -211,11 +211,11 @@ void Viewer::init()
 		glDispatchCompute(m_width/16, m_height/16, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-//		GLuint* ptr = (GLuint*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+//		vec2* ptr = (vec2*) glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
-//		for(int j = 0; j < nb_points_buffers[i]; ++j)
+//		for(int j = 0; j < m_nb_points_buffers[i]; ++j)
 //		{
-//			std::cout << ptr[j] << std::endl;
+//			std::cout << ptr[j].x << " | " << ptr[j].y << std::endl;
 //		}
 //		std::cout << "-----------" << std::endl;
 //		std::cout << "-----------" << std::endl;
@@ -309,8 +309,8 @@ void Viewer::reconstruct()
 	{
 		glUseProgram(m_compute_lifting_programID);
 
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width-1);
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height-1);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
 
 		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), false);
 		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size);
