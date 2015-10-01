@@ -14,8 +14,8 @@ void main(){
 	int image_x = int(pixel.x)/width;
 	int image_y = int(mod(int(pixel.x),width));
 
-//	if(mod(image_x, size)==0 && mod(image_y, size)==0)
-//	{
+	if(mod(image_x, size)==0 && mod(image_y, size)==0)
+	{
 		float x = float(image_x)/float(width-1);
 		float y = float(image_y)/float(height-1);
 
@@ -30,9 +30,9 @@ void main(){
 		{
 			gl_Position = vec4(0, 0, -2, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
 		}
-//	}
-//	else
-//	{
-//		gl_Position = vec4(0, 0, -2, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
-//	}
+	}
+	else
+	{
+		gl_Position = vec4(0, 0, -2, 1);	//Put the point outside of the view frustum (clip coordinates \in [-1;1])
+	}
 }

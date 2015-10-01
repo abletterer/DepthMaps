@@ -94,7 +94,7 @@ void main()
 {
 	if(to_decompose)
 	{
-		decompose();
+//		decompose();
 	}
 	else
 	{
