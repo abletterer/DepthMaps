@@ -85,7 +85,7 @@ void Viewer::draw()
 			2,			// size
 			GL_FLOAT,	// type
 			GL_FALSE,	// normalized?
-			sizeof(vec2)*size,			//stride
+			0,			//stride
 			(void*)0	// array buffer offset
 		);
 
@@ -113,12 +113,13 @@ void Viewer::init()
 //	this->camera()->setZClippingCoefficient(1000.f);
 
   // Dark blue background
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
 
-	glEnable( GL_POINT_SMOOTH );
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	glPointSize(2.f);
+//	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//	glEnable( GL_POINT_SMOOTH );
+//	glEnable( GL_BLEND );
+//	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+//	glPointSize(2.f);
 
   // Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -141,7 +142,7 @@ void Viewer::init()
 	std::vector<std::vector<GLfloat>> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/dragon/DepthMaps/1024x1024/";
+	str += "/Projets/Results/bunny/DepthMaps/512x512/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
@@ -291,52 +292,52 @@ void Viewer::decompose()
 
 	if(size < m_width && size < m_height)
 	{
-//		glUseProgram(m_compute_lifting_programID);
+		glUseProgram(m_compute_lifting_programID);
 
-//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
-//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
 
-//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size);
-//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size*2);
+		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
 
-//		GLuint copy_buffer = 0;
-//		glGenBuffers(1, &copy_buffer);
+		GLuint copy_buffer = 0;
+		glGenBuffers(1, &copy_buffer);
 
-//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, copy_buffer);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, copy_buffer);
 
-//		for(int i = 0; i < m_index_buffers.size(); ++i)
-//		{
-//			GLuint& vertex_buffer = m_index_buffers[i];
+		for(int i = 0; i < m_index_buffers.size(); ++i)
+		{
+			GLuint& vertex_buffer = m_index_buffers[i];
 
-//			glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-//			glBindBuffer(GL_COPY_WRITE_BUFFER, copy_buffer);
+			glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+			glBindBuffer(GL_COPY_WRITE_BUFFER, copy_buffer);
 
-//			glBufferData(GL_COPY_WRITE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
+			glBufferData(GL_COPY_WRITE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
 
-//			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
 
-//			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
-//			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
+			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
 
-//			glDispatchCompute(m_width/16, m_height/16, 1);
-//			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glDispatchCompute(m_width/16, m_height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-//			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
 
-//			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
+			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
 
-//			glDispatchCompute(m_width/16, m_height/16, 1);
-//			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-//		}
+			glDispatchCompute(m_width/16, m_height/16, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
 
-//		glBindBuffer(GL_COPY_READ_BUFFER, 0);
-//		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
-//		glDeleteBuffers(1, &copy_buffer);
+		glBindBuffer(GL_COPY_READ_BUFFER, 0);
+		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+		glDeleteBuffers(1, &copy_buffer);
 
-//		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		m_level++;
 	}
