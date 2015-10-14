@@ -55,17 +55,13 @@ void Viewer::draw()
 		}
 	}
 
-	int size = 1<<m_level;
-
 	// Use our shader
 	glUseProgram(m_render_programID);
 
 	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
 	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
 
-	glUniform1i(glGetUniformLocation(m_render_programID, "size"), size);
-
-	for(int i = 0; i < m_index_buffers[i]; ++i)
+	for(int i = 0; i < 1; ++i)
 	{
 		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
 
@@ -89,7 +85,7 @@ void Viewer::draw()
 			(void*)0	// array buffer offset
 		);
 
-		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]/size);	//Launch OpenGL pipeline on those primitives
+		glDrawArrays(GL_POINTS, 0, m_nb_points_buffers[i]);	//Launch OpenGL pipeline on those primitives
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -110,7 +106,7 @@ void Viewer::init()
 		return;
 	}
 
-//	this->camera()->setZClippingCoefficient(1000.f);
+	this->camera()->setZClippingCoefficient(1000.f);
 
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
@@ -139,10 +135,10 @@ void Viewer::init()
 	m_compute_programID = compute_program.getProgramId();
 	m_compute_lifting_programID = lifting_program.getProgramId();
 
-	std::vector<std::vector<GLfloat>> depth_maps;
+	std::vector<Eigen::MatrixXf> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/bunny/DepthMaps/512x512/";
+	str += "/Projets/Results/ramsesses/DepthMaps/512x512/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
@@ -162,6 +158,21 @@ void Viewer::init()
 
 	std::cout << ".. fait en " << duration/1000 << " ms" << std::endl;
 
+	std::cout << "Décomposition des cartes de profondeur .." << std::flush;
+
+	start_t = std::chrono::high_resolution_clock::now();
+
+	for(int i = 0; i < depth_maps.size(); ++i)
+	{
+		decompose(depth_maps[i], m_width, m_height, m_level);
+	}
+
+	end_t = std::chrono::high_resolution_clock::now();
+
+	duration = std::chrono::duration_cast<std::chrono::microseconds>(end_t-start_t).count();
+
+	std::cout << ".. fait en " << duration/1000 << " ms (" << m_level << " niveau(x) générés)." << std::endl;
+
 	std::cout << "Génération des VBO représentant chaque carte de profondeur .." << std::flush;
 
 	start_t = std::chrono::high_resolution_clock::now();
@@ -169,7 +180,7 @@ void Viewer::init()
 	m_nb_points_buffers.reserve(depth_maps.size());
 	int nb_points = m_width*m_height;
 
-	for(std::vector<std::vector<GLfloat>>::const_iterator it = depth_maps.begin(); it != depth_maps.end(); ++it )
+	for(std::vector<Eigen::MatrixXf>::const_iterator it = depth_maps.begin(); it != depth_maps.end(); ++it )
 	{
 		m_nb_points_buffers.push_back(nb_points);
 	}
@@ -190,13 +201,13 @@ void Viewer::init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	for(int i = 0; i < m_index_buffers.size(); ++i)
+	for(int i = 0; i < 1; ++i)
 	{
 		GLuint& vertex_buffer = m_index_buffers[i];
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width,
 			m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-			&depth_maps[i][0]);
+			depth_maps[i].block(0,0,m_height/(m_level+1),m_width/(m_level+1)).data());
 
 		glGenBuffers(1, &vertex_buffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
@@ -286,69 +297,67 @@ QString Viewer::helpString() const
 	return text;
 }
 
-void Viewer::decompose()
+void Viewer::lowerLevel()
 {
-	int size = 1<<m_level;
+//	int size = 1<<m_level;
 
-	if(size < m_width && size < m_height)
-	{
-		glUseProgram(m_compute_lifting_programID);
+//	if(size < m_width && size < m_height)
+//	{
+//		glUseProgram(m_compute_lifting_programID);
 
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
+//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
+//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "height"), m_height);
 
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size*2);
-		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
+//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "size"), size*2);
+//		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "to_decompose"), true);
 
-		GLuint copy_buffer = 0;
-		glGenBuffers(1, &copy_buffer);
+//		GLuint copy_buffer = 0;
+//		glGenBuffers(1, &copy_buffer);
 
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, copy_buffer);
+//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, copy_buffer);
 
-		for(int i = 0; i < m_index_buffers.size(); ++i)
-		{
-			GLuint& vertex_buffer = m_index_buffers[i];
+//		for(int i = 0; i < m_index_buffers.size(); ++i)
+//		{
+//			GLuint& vertex_buffer = m_index_buffers[i];
 
-			glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-			glBindBuffer(GL_COPY_WRITE_BUFFER, copy_buffer);
+//			glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
+//			glBindBuffer(GL_COPY_WRITE_BUFFER, copy_buffer);
 
-			glBufferData(GL_COPY_WRITE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
+//			glBufferData(GL_COPY_WRITE_BUFFER, m_nb_points_buffers[i] * sizeof(vec2), NULL, GL_STATIC_DRAW);
 
-			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+//			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
 
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
+//			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_buffer);
 
-			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
+//			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), true);
 
-			glDispatchCompute(m_width/16, m_height/16, 1);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//			glDispatchCompute(m_width/16, m_height/16, 1);
+//			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
+//			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_nb_points_buffers[i] * sizeof(vec2));
 
-			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
+//			glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "horizontal"), false);
 
-			glDispatchCompute(m_width/16, m_height/16, 1);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-		}
+//			glDispatchCompute(m_width/16, m_height/16, 1);
+//			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//		}
 
-		glBindBuffer(GL_COPY_READ_BUFFER, 0);
-		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
-		glDeleteBuffers(1, &copy_buffer);
+//		glBindBuffer(GL_COPY_READ_BUFFER, 0);
+//		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+//		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+//		glDeleteBuffers(1, &copy_buffer);
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-		m_level++;
-	}
+//		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+//	}
 }
 
-void Viewer::reconstruct()
+void Viewer::upperLevel()
 {
-	int size = 1<<m_level;
+//	int size = 1<<m_level;
 
-	if(m_level > 0)
-	{
+//	if(m_level > 0)
+//	{
 //		glUseProgram(m_compute_lifting_programID);
 
 //		glUniform1i(glGetUniformLocation(m_compute_lifting_programID, "width"), m_width);
@@ -369,9 +378,7 @@ void Viewer::reconstruct()
 
 //		glBindVertexArray(0);
 //		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-		m_level--;
-	}
+//	}
 }
 
 void Viewer::keyPressEvent(QKeyEvent* event)
@@ -380,13 +387,13 @@ void Viewer::keyPressEvent(QKeyEvent* event)
 	{
 		case Qt::Key_D:
 			std::cout << "Décomposition .." << std::flush;
-			decompose();
+			//lowerLevel();
 			std::cout << ".. fait (Niveau " << m_level << ")" << std::endl;
 			updateGL();
 		break;
 		case Qt::Key_R:
 			std::cout << "Reconstruction .." << std::flush;
-			reconstruct();
+			//upperLevel();
 			std::cout << ".. fait (Niveau " << m_level << ")" << std::endl;
 			updateGL();
 		break;

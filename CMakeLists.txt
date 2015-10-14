@@ -10,6 +10,7 @@ find_package(GLM REQUIRED)
 find_package(Qt4 REQUIRED)
 find_package(QGLViewer REQUIRED)
 find_package(Boost COMPONENTS filesystem regex system REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory !" )
@@ -28,6 +29,7 @@ include_directories(
 	${QT_INCLUDE_DIR}
 	${QGLVIEWER_INCLUDE_DIR}
 	${Boost_INCLUDE_DIRS}
+	${EIGEN3_INCLUDE_DIR}
 	.
 )
 

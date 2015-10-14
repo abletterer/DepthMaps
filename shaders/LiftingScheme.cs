@@ -12,7 +12,7 @@ uniform bool horizontal;
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-//Calcul du modulo car la fonction mod retourne un flottant
+//Calcul du modulo car la fonction mod définie par défaut retourne un flottant
 int modulo(int dividend, int divisor)
 {
 	return dividend - dividend/divisor*divisor;
@@ -30,11 +30,12 @@ void decompose()
 	{
 		if(modulo(x,size)==0)
 		{
-			pixel[(x/2)*width+y].x = (x/2)*width+y;
-			pixel[(x/2)*width+y].y = copy_pixel[x*width+y].y;
+			int new_index = (x/2)*width+y;
+			pixel[new_index] = copy_pixel[index];
 		}
 		else
 		{
+			pixel[index].y = 0;
 			//Si l'élément courant est un impair
 //			if((x+1)>=height)
 //			{
@@ -51,13 +52,15 @@ void decompose()
 	}
 	else
 	{
+
 		if(modulo(y,size)==0)
 		{
-			pixel[x*width+y/2].x = x*width+y/2;
-			pixel[x*width+y/2].y = copy_pixel[x*width+y].y;
+			int new_index = x*width+y/2;
+			pixel[new_index] = copy_pixel[index];
 		}
 		else
 		{
+			pixel[index].y = 0;
 			//Si l'élément courant est un impair
 //			if((y+1)>=width)
 //			{

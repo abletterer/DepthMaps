@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <Eigen/Core>
+
 class Viewer : public QGLViewer
 {
 	protected :
@@ -9,8 +11,8 @@ class Viewer : public QGLViewer
 	virtual void init();
 	virtual QString helpString() const;
 
-	virtual void decompose();
-	virtual void reconstruct();
+	virtual void lowerLevel();
+	virtual void upperLevel();
 
 	virtual void keyPressEvent(QKeyEvent* event);
 

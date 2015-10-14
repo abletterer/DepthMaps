@@ -18,6 +18,8 @@
 
 #include <glm/glm.hpp>
 
+#include <Eigen/Core>
+
 namespace fs = boost::filesystem;
 
 enum file_type
@@ -27,7 +29,8 @@ enum file_type
 	DENSITY = 2
 };
 
-void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps, std::vector<glm::mat4>& matrices, int& width, int& height, const file_type type)
+void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<Eigen::MatrixXf>& depth_maps,
+							std::vector<glm::mat4>& matrices, int& width, int& height, const file_type type)
 {
 	fs::path directory(directory_name);
 
@@ -59,7 +62,7 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::
 		{
 			if(boost::regex_match(dir_iter->filename().string(), what, filter_type))
 			{
-				std::vector<GLfloat> depth_map;
+				std::vector<float> depth_vector;
 				std::ifstream file(directory_name+dir_iter->filename().string());
 				std::string line;
 
@@ -67,21 +70,23 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::
 				{
 					getline(file, line);
 					std::istringstream is_before(line);
-					std::vector<GLfloat> tmp_vec((std::istream_iterator<GLfloat>(is_before)),
-						std::istream_iterator<GLfloat>());
-					depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
-					width = depth_map.size();
+					std::vector<float> tmp_vec((std::istream_iterator<float>(is_before)),
+						std::istream_iterator<float>());
+					depth_vector.insert(depth_vector.end(), tmp_vec.begin(), tmp_vec.end());
+					width = depth_vector.size();
 
 					while (getline(file, line))
 					{
 						std::istringstream is(line);
-						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
-						depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
+						std::vector<float> tmp_vec{std::istream_iterator<float>(is), std::istream_iterator<float>()};
+						depth_vector.insert(depth_vector.end(), tmp_vec.begin(), tmp_vec.end());
 					}
 
-					height = depth_map.size()/width;
+					height = depth_vector.size()/width;
 
-					depth_maps.push_back(depth_map);
+					Eigen::Map<Eigen::MatrixXf> depth_image(depth_vector.data(), height, width);
+
+					depth_maps.push_back(depth_image);
 					++count;
 				}
 				else
@@ -101,7 +106,7 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::
 					while (getline( file, line ) && count < 4)
 					{
 						std::istringstream is(line);
-						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
+						std::vector<float> tmp_vec{std::istream_iterator<float>(is), std::istream_iterator<float>()};
 
 						for(int i = 0; i < tmp_vec.size(); ++i)
 						{
@@ -123,8 +128,8 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<std::
 	}
 }
 
-void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vector<GLfloat>>& depth_maps,
-					   std::vector<glm::mat4>& matrices, int& width, int& height, std::vector<GLfloat>& params)
+void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vector<float>>& depth_maps,
+					   std::vector<glm::mat4>& matrices, int& width, int& height, std::vector<float>& params)
 {
 	fs::path directory(directory_name);
 
@@ -144,7 +149,7 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 		{
 			if(boost::regex_match(dir_iter->filename().string(), what, filter_type))
 			{
-				std::vector<GLfloat> depth_map;
+				std::vector<float> depth_vector;
 				std::ifstream file(directory_name+dir_iter->filename().string());
 				std::string line;
 
@@ -152,25 +157,25 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 				{
 					getline(file, line);
 					std::istringstream is_before(line);
-					std::vector<GLfloat> tmp_vec((std::istream_iterator<GLfloat>(is_before)),
-						std::istream_iterator<GLfloat>());
-					depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
-					width = depth_map.size();
+					std::vector<float> tmp_vec((std::istream_iterator<float>(is_before)),
+						std::istream_iterator<float>());
+					depth_vector.insert(depth_vector.end(), tmp_vec.begin(), tmp_vec.end());
+					width = depth_vector.size();
 
 					while (getline(file, line))
 					{
 						std::istringstream is(line);
-						std::vector<GLfloat> tmp_vec{std::istream_iterator<GLfloat>(is), std::istream_iterator<GLfloat>()};
+						std::vector<float> tmp_vec{std::istream_iterator<float>(is), std::istream_iterator<float>()};
 						for(int i = 0; i < tmp_vec.size(); ++i)
 						{
 							tmp_vec[i] = (tmp_vec[i])*2-1;	//Convert depth-map from [0;1] to [-1;1] where -1 is the near_plane and 1 the far_plane
 						}
-						depth_map.insert(depth_map.end(), tmp_vec.begin(), tmp_vec.end());
+						depth_vector.insert(depth_vector.end(), tmp_vec.begin(), tmp_vec.end());
 					}
 
-					height = depth_map.size()/width;
+					height = depth_vector.size()/width;
 
-					depth_maps.push_back(depth_map);
+					depth_maps.push_back(depth_vector);
 					++count;
 				}
 				else
@@ -219,6 +224,72 @@ void loadRealDepthMaps(const std::string& directory_name, std::vector<std::vecto
 				}
 			}
 		}
+	}
+}
+
+void decompose(Eigen::MatrixXf& image, int width, int height, int& levels)
+{
+	Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> image_tmp(image);
+
+	levels = 0;
+
+	while(width > 128 && height > 128)
+	{
+		const int width2 = width, height2 = height;
+		width /= 2; height /= 2;
+
+		//DECOMPOSITION VERTICALE
+		for(int j = 0; j < height2; ++j)
+		{
+			//Traitement des pairs
+			for(int i = 0; i < width2-1; i += 2)
+			{
+				image(i/2, j) = image_tmp(i, j);
+			}
+
+			//Traitement des impairs
+			for(int i = 1; i < width2-1; i += 2)
+			{
+				float impair = image_tmp(i, j);
+				float pair_1 = image_tmp(i-1, j);
+				float pair_2 = image_tmp(i+1, j);
+
+				impair -= (pair_1+pair_2)/2.f;
+				image(width+i/2, j) = impair/2.f;
+			}
+		}
+
+		//Traitement spécifique pour la dernière colonne (différence avec le pair situé à gauche)
+		for(int j = 0; j < height2; ++j)
+		{
+			image(width2-1, j) = (image(width2-1, j)-image_tmp(width2-2, j))/2.f;
+		}
+
+		image_tmp = Eigen::Matrix<GLfloat, Eigen::Dynamic, Eigen::Dynamic>(image);
+
+		//DECOMPOSITION HORIZONTALE
+
+		for(int i = 0; i < width2; ++i)
+		{
+			for(int j = 0; j < height2-1; j += 2)
+			{
+				image(i, j/2) = image_tmp(i, j);
+			}
+			for(int j = 1; j < height2-1; j += 2)
+			{
+				float impair = image_tmp(i, j);
+				float pair_1 = image_tmp(i, j-1);
+				float pair_2 = image_tmp(i, j+1);
+
+				impair -= (pair_1+pair_2)/2.f;
+				image(i, height+j/2) = impair/2.f;
+			}
+
+			//Traitement spécifique pour la dernière ligne (différence avec le pair situé au dessus)
+			image(i, height2-1) = (image(i, height2-1)-image_tmp(i, height2-2))/2.f;
+		}
+
+		++levels;
 	}
 }
 
