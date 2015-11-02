@@ -61,7 +61,7 @@ void Viewer::draw()
 	glUniform1i(glGetUniformLocation(m_render_programID, "width"), m_width);
 	glUniform1i(glGetUniformLocation(m_render_programID, "height"), m_height);
 
-	for(int i = 0; i < 1; ++i)
+	for(int i = 0; i < m_mvp_matrices.size(); ++i)
 	{
 		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
 
@@ -106,7 +106,7 @@ void Viewer::init()
 		return;
 	}
 
-	this->camera()->setZClippingCoefficient(1000.f);
+//	this->camera()->setZClippingCoefficient(1000.f);
 
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
@@ -138,7 +138,7 @@ void Viewer::init()
 	std::vector<Eigen::MatrixXf> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/ramsesses/DepthMaps/512x512/";
+	str += "/Projets/Results/buste/DepthMaps/256x256/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
@@ -162,10 +162,10 @@ void Viewer::init()
 
 	start_t = std::chrono::high_resolution_clock::now();
 
-	for(int i = 0; i < depth_maps.size(); ++i)
-	{
-		decompose(depth_maps[i], m_width, m_height, m_level);
-	}
+//	for(int i = 0; i < depth_maps.size(); ++i)
+//	{
+//		decompose(depth_maps[i], m_width, m_height, m_level);
+//	}
 
 	end_t = std::chrono::high_resolution_clock::now();
 
@@ -201,7 +201,7 @@ void Viewer::init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	for(int i = 0; i < 1; ++i)
+	for(int i = 0; i < depth_maps.size(); ++i)
 	{
 		GLuint& vertex_buffer = m_index_buffers[i];
 
