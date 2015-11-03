@@ -9,6 +9,7 @@
 #include <GL/glew.h>
 
 // Include GLM
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/ext.hpp>
@@ -44,16 +45,17 @@ void Viewer::draw()
 
 	dmat4 mvp_matrix_d;
 	this->camera()->getModelViewProjectionMatrix(value_ptr(mvp_matrix_d));
+    qglviewer::Vec camera_position = this->camera()->position();
 
-	mat4 mvp_matrix_o;
+    mat4 mvp_matrix_o;
 
-	for(int j = 0; j < 4; ++j)
-	{
-		for(int k = 0; k < 4; ++k)
-		{
-			mvp_matrix_o[j][k] = (GLfloat)mvp_matrix_d[j][k];
-		}
-	}
+    for(int j = 0; j < 4; ++j)
+    {
+        for(int k = 0; k < 4; ++k)
+        {
+            mvp_matrix_o[j][k] = (GLfloat)mvp_matrix_d[j][k];
+        }
+    }
 
 	// Use our shader
 	glUseProgram(m_render_programID);
@@ -63,7 +65,7 @@ void Viewer::draw()
 
 	for(int i = 0; i < m_mvp_matrices.size(); ++i)
 	{
-		mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
+        mat4 mvp_matrix = mvp_matrix_o*m_mvp_matrices[i];
 
 		vec3 color = m_colors[i];
 
@@ -71,7 +73,9 @@ void Viewer::draw()
 		// in the "MVP" uniform
 		glUniformMatrix4fv(glGetUniformLocation(m_render_programID, "MVP"), 1, GL_FALSE, value_ptr(mvp_matrix));  //&MVP[0][0]
 
-		glUniform3f(glGetUniformLocation(m_render_programID, "color"), color[0], color[1], color[2]);
+        glUniform3f(glGetUniformLocation(m_render_programID, "color"), color[0], color[1], color[2]);
+
+        glUniform3f(glGetUniformLocation(m_render_programID, "camera_position"), camera_position.x, camera_position.y, camera_position.z);
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_index_buffers[i]);
 
@@ -90,7 +94,7 @@ void Viewer::draw()
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	QGLViewer::draw();
+    //QGLViewer::draw();
 }
 
 void Viewer::init()
@@ -138,7 +142,7 @@ void Viewer::init()
 	std::vector<Eigen::MatrixXf> depth_maps;
 
 	std::string str = getenv("HOME");
-	str += "/Projets/Results/buste/DepthMaps/256x256/";
+    str += "/Projets/Results/bunny/DepthMaps/1024x1024/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
@@ -160,12 +164,7 @@ void Viewer::init()
 
 	std::cout << "Décomposition des cartes de profondeur .." << std::flush;
 
-	start_t = std::chrono::high_resolution_clock::now();
-
-//	for(int i = 0; i < depth_maps.size(); ++i)
-//	{
-//		decompose(depth_maps[i], m_width, m_height, m_level);
-//	}
+    start_t = std::chrono::high_resolution_clock::now();
 
 	end_t = std::chrono::high_resolution_clock::now();
 
