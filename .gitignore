@@ -2,3 +2,6 @@
 *.user
 build/*
 *DepthMapToPointCloud*
+*.so*
+*.moc
+*.obj

@@ -3,6 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 project (DepthMaps)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/Modules/functions.cmake)
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -11,6 +12,10 @@ find_package(Qt4 REQUIRED)
 find_package(QGLViewer REQUIRED)
 find_package(Boost COMPONENTS filesystem regex system REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+ADD_SUBDIRECTORY(resources/libQGLViewer/QGLViewer)
+
+SET(QT_USE_QTXML TRUE)
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory !" )
@@ -27,7 +32,7 @@ include_directories(
 	${GLEW_INCLUDE_DIRS}
 	${GLM_INCLUDE_DIRS}
 	${QT_INCLUDE_DIR}
-	${QGLVIEWER_INCLUDE_DIR}
+	${CMAKE_SOURCE_DIR}/resources/libQGLViewer
 	${Boost_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
 	.
@@ -39,7 +44,7 @@ set(ALL_LIBS
 	${OPENGL_LIBRARY}
 	${GLEW_LIBRARIES}
 	${QT_LIBRARIES}
-	${QGLVIEWER_LIBRARY}
+	QGLViewer
 	${Boost_LIBRARIES}
 )
 
@@ -50,6 +55,7 @@ add_definitions(
 	-DGLEW_STATIC
 	-D_CRT_SECURE_NO_WARNINGS
 	${QT_DEFINITIONS}
+	-std=c++11
 )
 
 #DepthMapToPointCloud
@@ -82,10 +88,10 @@ add_executable(DepthMapToPointCloud
 	${INCLUDE_FILES}
 	${SHADER_FILES}
 )
-target_compile_features(DepthMapToPointCloud
-	PRIVATE
-	cxx_range_for
-)
+#target_compile_features(DepthMapToPointCloud
+#	PRIVATE
+#	cxx_range_for
+#)
 target_link_libraries(DepthMapToPointCloud
 	${ALL_LIBS}
 )
