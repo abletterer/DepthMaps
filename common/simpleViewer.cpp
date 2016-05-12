@@ -142,7 +142,7 @@ void Viewer::init()
 	std::vector<Eigen::MatrixXf> depth_maps;
 
 	std::string str = getenv("HOME");
-    str += "/Projets/Results/bunny/DepthMaps/1024x1024/";
+    str += "/Projets/Results/bunny/DepthMaps/512x512/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;
