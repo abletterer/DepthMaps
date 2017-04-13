@@ -84,7 +84,9 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<Eigen
 
 					height = depth_vector.size()/width;
 
-					Eigen::Map<Eigen::MatrixXf> depth_image(depth_vector.data(), height, width);
+					Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> depth_image(depth_vector.data(), height, width);
+					
+					depth_image = depth_image.array()*2-1;
 
 					depth_maps.push_back(depth_image);
 					++count;
@@ -115,7 +117,7 @@ void loadSimulatedDepthMaps(const std::string& directory_name, std::vector<Eigen
 						++count;
 					}
 
-					tmp_mat = glm::inverse(tmp_mat);
+					tmp_mat = glm::inverse(glm::transpose(tmp_mat));
 
 					matrices.push_back(tmp_mat);
 				}

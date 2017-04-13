@@ -110,7 +110,7 @@ void Viewer::init()
 		return;
 	}
 
-//	this->camera()->setZClippingCoefficient(1000.f);
+	this->camera()->setZClippingCoefficient(1000.f);
 
   // Dark blue background
 	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);
@@ -142,7 +142,7 @@ void Viewer::init()
 	std::vector<Eigen::MatrixXf> depth_maps;
 
 	std::string str = getenv("HOME");
-    str += "/Projets/Results/bunny/DepthMaps/512x512/";
+    str += "/Projets/Results/garuda/DepthMaps/1024x1024/";
 //	str += "/Projets/Models/Kinect/";
 
 	std::cout << "Chargement des cartes de profondeur depuis le disque dur .." << std::flush;

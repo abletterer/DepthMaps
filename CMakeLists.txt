@@ -88,6 +88,7 @@ add_executable(DepthMapToPointCloud
 	${INCLUDE_FILES}
 	${SHADER_FILES}
 )
+#C++11 compilation
 #target_compile_features(DepthMapToPointCloud
 #	PRIVATE
 #	cxx_range_for
