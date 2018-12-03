@@ -80,10 +80,13 @@ add_executable(DepthMapToPointCloud
 	${INCLUDE_FILES}
 	${SHADER_FILES}
 )
-target_compile_features(DepthMapToPointCloud
-	PRIVATE
-	cxx_range_for
-)
+#target_compile_features(DepthMapToPointCloud
+#	PRIVATE
+#	cxx_range_for
+#)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 target_link_libraries(DepthMapToPointCloud
 	${ALL_LIBS}
 )
